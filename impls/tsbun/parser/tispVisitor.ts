@@ -6,8 +6,6 @@ import {ParseTreeVisitor} from 'antlr4';
 import { TispContext } from "./tispParser";
 import { AtomExprContext } from "./tispParser";
 import { ListExprContext } from "./tispParser";
-import { ListContext } from "./tispParser";
-import { AtomContext } from "./tispParser";
 
 
 /**
@@ -38,17 +36,5 @@ export default class tispVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitListExpr?: (ctx: ListExprContext) => Result;
-	/**
-	 * Visit a parse tree produced by `tispParser.list`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitList?: (ctx: ListContext) => Result;
-	/**
-	 * Visit a parse tree produced by `tispParser.atom`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitAtom?: (ctx: AtomContext) => Result;
 }
 
