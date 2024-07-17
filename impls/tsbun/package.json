@@ -1,0 +1,20 @@
+{
+  "name": "tsbun",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "test": "npm run test:step0 && npm run test:step1",
+    "test:step0": "cd ../.. && make 'test^tsbun^step0'",
+    "test:step1": "cd ../.. && make 'test^tsbun^step1'"
+  },
+  "dependencies": {
+    "@types/antlr4": "^4.11.6",
+    "antlr4": "^4.13.1-patch-1"
+  }
+}
