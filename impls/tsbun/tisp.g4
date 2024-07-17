@@ -5,21 +5,21 @@ grammar tisp;
 tisp: s_expr+ EOF;
 
 s_expr
-  : atom
-  | list
-  | array
-  | map
+  : atom #atomExpr
+  | list #listExpr
+//  | array #arrayExpr
+//  | map #mapExpr
   ;
 
 list
   : '(' s_expr* ')'
   ;
-array
-  : '[' s_expr* ']'
-  ;
-map
-  : '{' s_expr* '}'
-  ;
+//array
+//  : '[' s_expr* ']'
+//  ;
+//map
+//  : '{' s_expr* '}'
+//  ;
 atom
   : NUMBER
   | STRING

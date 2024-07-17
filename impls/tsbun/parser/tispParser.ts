@@ -21,35 +21,25 @@ type int = number;
 export default class tispParser extends Parser {
 	public static readonly T__0 = 1;
 	public static readonly T__1 = 2;
-	public static readonly T__2 = 3;
-	public static readonly T__3 = 4;
-	public static readonly T__4 = 5;
-	public static readonly T__5 = 6;
-	public static readonly OPS = 7;
-	public static readonly NUMBER = 8;
-	public static readonly STRING = 9;
-	public static readonly ID = 10;
-	public static readonly WS = 11;
+	public static readonly OPS = 3;
+	public static readonly NUMBER = 4;
+	public static readonly STRING = 5;
+	public static readonly ID = 6;
+	public static readonly WS = 7;
 	public static readonly EOF = Token.EOF;
 	public static readonly RULE_tisp = 0;
 	public static readonly RULE_s_expr = 1;
 	public static readonly RULE_list = 2;
-	public static readonly RULE_array = 3;
-	public static readonly RULE_map = 4;
-	public static readonly RULE_atom = 5;
+	public static readonly RULE_atom = 3;
 	public static readonly literalNames: (string | null)[] = [ null, "'('", 
-                                                            "')'", "'['", 
-                                                            "']'", "'{'", 
-                                                            "'}'" ];
+                                                            "')'" ];
 	public static readonly symbolicNames: (string | null)[] = [ null, null, 
-                                                             null, null, 
-                                                             null, null, 
                                                              null, "OPS", 
                                                              "NUMBER", "STRING", 
                                                              "ID", "WS" ];
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
-		"tisp", "s_expr", "list", "array", "map", "atom",
+		"tisp", "s_expr", "list", "atom",
 	];
 	public get grammarFileName(): string { return "tisp.g4"; }
 	public get literalNames(): (string | null)[] { return tispParser.literalNames; }
@@ -73,21 +63,21 @@ export default class tispParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 13;
+			this.state = 9;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
 			do {
 				{
 				{
-				this.state = 12;
+				this.state = 8;
 				this.s_expr();
 				}
 				}
-				this.state = 15;
+				this.state = 11;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1962) !== 0));
-			this.state = 17;
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 122) !== 0));
+			this.state = 13;
 			this.match(tispParser.EOF);
 			}
 		}
@@ -110,38 +100,26 @@ export default class tispParser extends Parser {
 		let localctx: S_exprContext = new S_exprContext(this, this._ctx, this.state);
 		this.enterRule(localctx, 2, tispParser.RULE_s_expr);
 		try {
-			this.state = 23;
+			this.state = 17;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
-			case 7:
-			case 8:
-			case 9:
-			case 10:
+			case 3:
+			case 4:
+			case 5:
+			case 6:
+				localctx = new AtomExprContext(this, localctx);
 				this.enterOuterAlt(localctx, 1);
 				{
-				this.state = 19;
+				this.state = 15;
 				this.atom();
 				}
 				break;
 			case 1:
+				localctx = new ListExprContext(this, localctx);
 				this.enterOuterAlt(localctx, 2);
 				{
-				this.state = 20;
+				this.state = 16;
 				this.list();
-				}
-				break;
-			case 3:
-				this.enterOuterAlt(localctx, 3);
-				{
-				this.state = 21;
-				this.array();
-				}
-				break;
-			case 5:
-				this.enterOuterAlt(localctx, 4);
-				{
-				this.state = 22;
-				this.map();
 				}
 				break;
 			default:
@@ -170,108 +148,24 @@ export default class tispParser extends Parser {
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 25;
+			this.state = 19;
 			this.match(tispParser.T__0);
-			this.state = 29;
+			this.state = 23;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1962) !== 0)) {
+			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 122) !== 0)) {
 				{
 				{
-				this.state = 26;
+				this.state = 20;
 				this.s_expr();
 				}
 				}
-				this.state = 31;
+				this.state = 25;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
 			}
-			this.state = 32;
+			this.state = 26;
 			this.match(tispParser.T__1);
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.exitRule();
-		}
-		return localctx;
-	}
-	// @RuleVersion(0)
-	public array(): ArrayContext {
-		let localctx: ArrayContext = new ArrayContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 6, tispParser.RULE_array);
-		let _la: number;
-		try {
-			this.enterOuterAlt(localctx, 1);
-			{
-			this.state = 34;
-			this.match(tispParser.T__2);
-			this.state = 38;
-			this._errHandler.sync(this);
-			_la = this._input.LA(1);
-			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1962) !== 0)) {
-				{
-				{
-				this.state = 35;
-				this.s_expr();
-				}
-				}
-				this.state = 40;
-				this._errHandler.sync(this);
-				_la = this._input.LA(1);
-			}
-			this.state = 41;
-			this.match(tispParser.T__3);
-			}
-		}
-		catch (re) {
-			if (re instanceof RecognitionException) {
-				localctx.exception = re;
-				this._errHandler.reportError(this, re);
-				this._errHandler.recover(this, re);
-			} else {
-				throw re;
-			}
-		}
-		finally {
-			this.exitRule();
-		}
-		return localctx;
-	}
-	// @RuleVersion(0)
-	public map(): MapContext {
-		let localctx: MapContext = new MapContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 8, tispParser.RULE_map);
-		let _la: number;
-		try {
-			this.enterOuterAlt(localctx, 1);
-			{
-			this.state = 43;
-			this.match(tispParser.T__4);
-			this.state = 47;
-			this._errHandler.sync(this);
-			_la = this._input.LA(1);
-			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1962) !== 0)) {
-				{
-				{
-				this.state = 44;
-				this.s_expr();
-				}
-				}
-				this.state = 49;
-				this._errHandler.sync(this);
-				_la = this._input.LA(1);
-			}
-			this.state = 50;
-			this.match(tispParser.T__5);
 			}
 		}
 		catch (re) {
@@ -291,14 +185,14 @@ export default class tispParser extends Parser {
 	// @RuleVersion(0)
 	public atom(): AtomContext {
 		let localctx: AtomContext = new AtomContext(this, this._ctx, this.state);
-		this.enterRule(localctx, 10, tispParser.RULE_atom);
+		this.enterRule(localctx, 6, tispParser.RULE_atom);
 		let _la: number;
 		try {
 			this.enterOuterAlt(localctx, 1);
 			{
-			this.state = 52;
+			this.state = 28;
 			_la = this._input.LA(1);
-			if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 1920) !== 0))) {
+			if(!((((_la) & ~0x1F) === 0 && ((1 << _la) & 120) !== 0))) {
 			this._errHandler.recoverInline(this);
 			}
 			else {
@@ -322,22 +216,15 @@ export default class tispParser extends Parser {
 		return localctx;
 	}
 
-	public static readonly _serializedATN: number[] = [4,1,11,55,2,0,7,0,2,
-	1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,1,0,4,0,14,8,0,11,0,12,0,15,1,0,1,
-	0,1,1,1,1,1,1,1,1,3,1,24,8,1,1,2,1,2,5,2,28,8,2,10,2,12,2,31,9,2,1,2,1,
-	2,1,3,1,3,5,3,37,8,3,10,3,12,3,40,9,3,1,3,1,3,1,4,1,4,5,4,46,8,4,10,4,12,
-	4,49,9,4,1,4,1,4,1,5,1,5,1,5,0,0,6,0,2,4,6,8,10,0,1,1,0,7,10,55,0,13,1,
-	0,0,0,2,23,1,0,0,0,4,25,1,0,0,0,6,34,1,0,0,0,8,43,1,0,0,0,10,52,1,0,0,0,
-	12,14,3,2,1,0,13,12,1,0,0,0,14,15,1,0,0,0,15,13,1,0,0,0,15,16,1,0,0,0,16,
-	17,1,0,0,0,17,18,5,0,0,1,18,1,1,0,0,0,19,24,3,10,5,0,20,24,3,4,2,0,21,24,
-	3,6,3,0,22,24,3,8,4,0,23,19,1,0,0,0,23,20,1,0,0,0,23,21,1,0,0,0,23,22,1,
-	0,0,0,24,3,1,0,0,0,25,29,5,1,0,0,26,28,3,2,1,0,27,26,1,0,0,0,28,31,1,0,
-	0,0,29,27,1,0,0,0,29,30,1,0,0,0,30,32,1,0,0,0,31,29,1,0,0,0,32,33,5,2,0,
-	0,33,5,1,0,0,0,34,38,5,3,0,0,35,37,3,2,1,0,36,35,1,0,0,0,37,40,1,0,0,0,
-	38,36,1,0,0,0,38,39,1,0,0,0,39,41,1,0,0,0,40,38,1,0,0,0,41,42,5,4,0,0,42,
-	7,1,0,0,0,43,47,5,5,0,0,44,46,3,2,1,0,45,44,1,0,0,0,46,49,1,0,0,0,47,45,
-	1,0,0,0,47,48,1,0,0,0,48,50,1,0,0,0,49,47,1,0,0,0,50,51,5,6,0,0,51,9,1,
-	0,0,0,52,53,7,0,0,0,53,11,1,0,0,0,5,15,23,29,38,47];
+	public static readonly _serializedATN: number[] = [4,1,7,31,2,0,7,0,2,1,
+	7,1,2,2,7,2,2,3,7,3,1,0,4,0,10,8,0,11,0,12,0,11,1,0,1,0,1,1,1,1,3,1,18,
+	8,1,1,2,1,2,5,2,22,8,2,10,2,12,2,25,9,2,1,2,1,2,1,3,1,3,1,3,0,0,4,0,2,4,
+	6,0,1,1,0,3,6,29,0,9,1,0,0,0,2,17,1,0,0,0,4,19,1,0,0,0,6,28,1,0,0,0,8,10,
+	3,2,1,0,9,8,1,0,0,0,10,11,1,0,0,0,11,9,1,0,0,0,11,12,1,0,0,0,12,13,1,0,
+	0,0,13,14,5,0,0,1,14,1,1,0,0,0,15,18,3,6,3,0,16,18,3,4,2,0,17,15,1,0,0,
+	0,17,16,1,0,0,0,18,3,1,0,0,0,19,23,5,1,0,0,20,22,3,2,1,0,21,20,1,0,0,0,
+	22,25,1,0,0,0,23,21,1,0,0,0,23,24,1,0,0,0,24,26,1,0,0,0,25,23,1,0,0,0,26,
+	27,5,2,0,0,27,5,1,0,0,0,28,29,7,0,0,0,29,7,1,0,0,0,3,11,17,23];
 
 	private static __ATN: ATN;
 	public static get _ATN(): ATN {
@@ -396,35 +283,62 @@ export class S_exprContext extends ParserRuleContext {
 		super(parent, invokingState);
     	this.parser = parser;
 	}
-	public atom(): AtomContext {
-		return this.getTypedRuleContext(AtomContext, 0) as AtomContext;
-	}
-	public list(): ListContext {
-		return this.getTypedRuleContext(ListContext, 0) as ListContext;
-	}
-	public array(): ArrayContext {
-		return this.getTypedRuleContext(ArrayContext, 0) as ArrayContext;
-	}
-	public map(): MapContext {
-		return this.getTypedRuleContext(MapContext, 0) as MapContext;
-	}
     public get ruleIndex(): number {
     	return tispParser.RULE_s_expr;
 	}
+	public copyFrom(ctx: S_exprContext): void {
+		super.copyFrom(ctx);
+	}
+}
+export class AtomExprContext extends S_exprContext {
+	constructor(parser: tispParser, ctx: S_exprContext) {
+		super(parser, ctx.parentCtx, ctx.invokingState);
+		super.copyFrom(ctx);
+	}
+	public atom(): AtomContext {
+		return this.getTypedRuleContext(AtomContext, 0) as AtomContext;
+	}
 	public enterRule(listener: tispListener): void {
-	    if(listener.enterS_expr) {
-	 		listener.enterS_expr(this);
+	    if(listener.enterAtomExpr) {
+	 		listener.enterAtomExpr(this);
 		}
 	}
 	public exitRule(listener: tispListener): void {
-	    if(listener.exitS_expr) {
-	 		listener.exitS_expr(this);
+	    if(listener.exitAtomExpr) {
+	 		listener.exitAtomExpr(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: tispVisitor<Result>): Result {
-		if (visitor.visitS_expr) {
-			return visitor.visitS_expr(this);
+		if (visitor.visitAtomExpr) {
+			return visitor.visitAtomExpr(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+export class ListExprContext extends S_exprContext {
+	constructor(parser: tispParser, ctx: S_exprContext) {
+		super(parser, ctx.parentCtx, ctx.invokingState);
+		super.copyFrom(ctx);
+	}
+	public list(): ListContext {
+		return this.getTypedRuleContext(ListContext, 0) as ListContext;
+	}
+	public enterRule(listener: tispListener): void {
+	    if(listener.enterListExpr) {
+	 		listener.enterListExpr(this);
+		}
+	}
+	public exitRule(listener: tispListener): void {
+	    if(listener.exitListExpr) {
+	 		listener.exitListExpr(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: tispVisitor<Result>): Result {
+		if (visitor.visitListExpr) {
+			return visitor.visitListExpr(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
@@ -460,76 +374,6 @@ export class ListContext extends ParserRuleContext {
 	public accept<Result>(visitor: tispVisitor<Result>): Result {
 		if (visitor.visitList) {
 			return visitor.visitList(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class ArrayContext extends ParserRuleContext {
-	constructor(parser?: tispParser, parent?: ParserRuleContext, invokingState?: number) {
-		super(parent, invokingState);
-    	this.parser = parser;
-	}
-	public s_expr_list(): S_exprContext[] {
-		return this.getTypedRuleContexts(S_exprContext) as S_exprContext[];
-	}
-	public s_expr(i: number): S_exprContext {
-		return this.getTypedRuleContext(S_exprContext, i) as S_exprContext;
-	}
-    public get ruleIndex(): number {
-    	return tispParser.RULE_array;
-	}
-	public enterRule(listener: tispListener): void {
-	    if(listener.enterArray) {
-	 		listener.enterArray(this);
-		}
-	}
-	public exitRule(listener: tispListener): void {
-	    if(listener.exitArray) {
-	 		listener.exitArray(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: tispVisitor<Result>): Result {
-		if (visitor.visitArray) {
-			return visitor.visitArray(this);
-		} else {
-			return visitor.visitChildren(this);
-		}
-	}
-}
-
-
-export class MapContext extends ParserRuleContext {
-	constructor(parser?: tispParser, parent?: ParserRuleContext, invokingState?: number) {
-		super(parent, invokingState);
-    	this.parser = parser;
-	}
-	public s_expr_list(): S_exprContext[] {
-		return this.getTypedRuleContexts(S_exprContext) as S_exprContext[];
-	}
-	public s_expr(i: number): S_exprContext {
-		return this.getTypedRuleContext(S_exprContext, i) as S_exprContext;
-	}
-    public get ruleIndex(): number {
-    	return tispParser.RULE_map;
-	}
-	public enterRule(listener: tispListener): void {
-	    if(listener.enterMap) {
-	 		listener.enterMap(this);
-		}
-	}
-	public exitRule(listener: tispListener): void {
-	    if(listener.exitMap) {
-	 		listener.exitMap(this);
-		}
-	}
-	// @Override
-	public accept<Result>(visitor: tispVisitor<Result>): Result {
-		if (visitor.visitMap) {
-			return visitor.visitMap(this);
 		} else {
 			return visitor.visitChildren(this);
 		}
