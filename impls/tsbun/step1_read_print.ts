@@ -14,10 +14,11 @@ const repl = async () => {
       break;
     }
     try{
-      console.log(rep(line));
+      process.stdout.write(rep(line));
+      process.stdout.write("\n");
     } catch(e) {
       const err: Error = e;
-      console.error(err.message);
+      process.stdout.write(err.message);
     }
     process.stdout.write(prompt);
   }

@@ -4,8 +4,12 @@ import {ParseTreeListener} from "antlr4";
 
 
 import { TispContext } from "./tispParser";
-import { AtomExprContext } from "./tispParser";
-import { ListExprContext } from "./tispParser";
+import { S_exprContext } from "./tispParser";
+import { ListContext } from "./tispParser";
+import { ArrayContext } from "./tispParser";
+import { MapContext } from "./tispParser";
+import { AtomContext } from "./tispParser";
+import { KeyContext } from "./tispParser";
 
 
 /**
@@ -24,28 +28,64 @@ export default class tispListener extends ParseTreeListener {
 	 */
 	exitTisp?: (ctx: TispContext) => void;
 	/**
-	 * Enter a parse tree produced by the `atomExpr`
-	 * labeled alternative in `tispParser.s_expr`.
+	 * Enter a parse tree produced by `tispParser.s_expr`.
 	 * @param ctx the parse tree
 	 */
-	enterAtomExpr?: (ctx: AtomExprContext) => void;
+	enterS_expr?: (ctx: S_exprContext) => void;
 	/**
-	 * Exit a parse tree produced by the `atomExpr`
-	 * labeled alternative in `tispParser.s_expr`.
+	 * Exit a parse tree produced by `tispParser.s_expr`.
 	 * @param ctx the parse tree
 	 */
-	exitAtomExpr?: (ctx: AtomExprContext) => void;
+	exitS_expr?: (ctx: S_exprContext) => void;
 	/**
-	 * Enter a parse tree produced by the `listExpr`
-	 * labeled alternative in `tispParser.s_expr`.
+	 * Enter a parse tree produced by `tispParser.list`.
 	 * @param ctx the parse tree
 	 */
-	enterListExpr?: (ctx: ListExprContext) => void;
+	enterList?: (ctx: ListContext) => void;
 	/**
-	 * Exit a parse tree produced by the `listExpr`
-	 * labeled alternative in `tispParser.s_expr`.
+	 * Exit a parse tree produced by `tispParser.list`.
 	 * @param ctx the parse tree
 	 */
-	exitListExpr?: (ctx: ListExprContext) => void;
+	exitList?: (ctx: ListContext) => void;
+	/**
+	 * Enter a parse tree produced by `tispParser.array`.
+	 * @param ctx the parse tree
+	 */
+	enterArray?: (ctx: ArrayContext) => void;
+	/**
+	 * Exit a parse tree produced by `tispParser.array`.
+	 * @param ctx the parse tree
+	 */
+	exitArray?: (ctx: ArrayContext) => void;
+	/**
+	 * Enter a parse tree produced by `tispParser.map`.
+	 * @param ctx the parse tree
+	 */
+	enterMap?: (ctx: MapContext) => void;
+	/**
+	 * Exit a parse tree produced by `tispParser.map`.
+	 * @param ctx the parse tree
+	 */
+	exitMap?: (ctx: MapContext) => void;
+	/**
+	 * Enter a parse tree produced by `tispParser.atom`.
+	 * @param ctx the parse tree
+	 */
+	enterAtom?: (ctx: AtomContext) => void;
+	/**
+	 * Exit a parse tree produced by `tispParser.atom`.
+	 * @param ctx the parse tree
+	 */
+	exitAtom?: (ctx: AtomContext) => void;
+	/**
+	 * Enter a parse tree produced by `tispParser.key`.
+	 * @param ctx the parse tree
+	 */
+	enterKey?: (ctx: KeyContext) => void;
+	/**
+	 * Exit a parse tree produced by `tispParser.key`.
+	 * @param ctx the parse tree
+	 */
+	exitKey?: (ctx: KeyContext) => void;
 }
 

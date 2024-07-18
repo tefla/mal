@@ -4,8 +4,12 @@ import {ParseTreeVisitor} from 'antlr4';
 
 
 import { TispContext } from "./tispParser";
-import { AtomExprContext } from "./tispParser";
-import { ListExprContext } from "./tispParser";
+import { S_exprContext } from "./tispParser";
+import { ListContext } from "./tispParser";
+import { ArrayContext } from "./tispParser";
+import { MapContext } from "./tispParser";
+import { AtomContext } from "./tispParser";
+import { KeyContext } from "./tispParser";
 
 
 /**
@@ -23,18 +27,40 @@ export default class tispVisitor<Result> extends ParseTreeVisitor<Result> {
 	 */
 	visitTisp?: (ctx: TispContext) => Result;
 	/**
-	 * Visit a parse tree produced by the `atomExpr`
-	 * labeled alternative in `tispParser.s_expr`.
+	 * Visit a parse tree produced by `tispParser.s_expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitAtomExpr?: (ctx: AtomExprContext) => Result;
+	visitS_expr?: (ctx: S_exprContext) => Result;
 	/**
-	 * Visit a parse tree produced by the `listExpr`
-	 * labeled alternative in `tispParser.s_expr`.
+	 * Visit a parse tree produced by `tispParser.list`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitListExpr?: (ctx: ListExprContext) => Result;
+	visitList?: (ctx: ListContext) => Result;
+	/**
+	 * Visit a parse tree produced by `tispParser.array`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitArray?: (ctx: ArrayContext) => Result;
+	/**
+	 * Visit a parse tree produced by `tispParser.map`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitMap?: (ctx: MapContext) => Result;
+	/**
+	 * Visit a parse tree produced by `tispParser.atom`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitAtom?: (ctx: AtomContext) => Result;
+	/**
+	 * Visit a parse tree produced by `tispParser.key`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitKey?: (ctx: KeyContext) => Result;
 }
 
