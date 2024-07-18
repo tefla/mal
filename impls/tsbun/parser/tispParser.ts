@@ -311,6 +311,7 @@ export default class tispParser extends Parser {
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 8:
+				localctx = new IdContext(this, localctx);
 				this.enterOuterAlt(localctx, 1);
 				{
 				this.state = 56;
@@ -318,6 +319,7 @@ export default class tispParser extends Parser {
 				}
 				break;
 			case 9:
+				localctx = new NumberContext(this, localctx);
 				this.enterOuterAlt(localctx, 2);
 				{
 				this.state = 57;
@@ -325,6 +327,7 @@ export default class tispParser extends Parser {
 				}
 				break;
 			case 10:
+				localctx = new StringContext(this, localctx);
 				this.enterOuterAlt(localctx, 3);
 				{
 				this.state = 58;
@@ -332,6 +335,7 @@ export default class tispParser extends Parser {
 				}
 				break;
 			case 11:
+				localctx = new OpContext(this, localctx);
 				this.enterOuterAlt(localctx, 4);
 				{
 				this.state = 59;
@@ -339,6 +343,7 @@ export default class tispParser extends Parser {
 				}
 				break;
 			case 7:
+				localctx = new AtomKeyContext(this, localctx);
 				this.enterOuterAlt(localctx, 5);
 				{
 				this.state = 60;
@@ -615,38 +620,143 @@ export class AtomContext extends ParserRuleContext {
 		super(parent, invokingState);
     	this.parser = parser;
 	}
-	public ID(): TerminalNode {
-		return this.getToken(tispParser.ID, 0);
+    public get ruleIndex(): number {
+    	return tispParser.RULE_atom;
+	}
+	public copyFrom(ctx: AtomContext): void {
+		super.copyFrom(ctx);
+	}
+}
+export class NumberContext extends AtomContext {
+	constructor(parser: tispParser, ctx: AtomContext) {
+		super(parser, ctx.parentCtx, ctx.invokingState);
+		super.copyFrom(ctx);
 	}
 	public NUMBER(): TerminalNode {
 		return this.getToken(tispParser.NUMBER, 0);
 	}
-	public STRING(): TerminalNode {
-		return this.getToken(tispParser.STRING, 0);
-	}
-	public OP(): TerminalNode {
-		return this.getToken(tispParser.OP, 0);
-	}
-	public key(): KeyContext {
-		return this.getTypedRuleContext(KeyContext, 0) as KeyContext;
-	}
-    public get ruleIndex(): number {
-    	return tispParser.RULE_atom;
-	}
 	public enterRule(listener: tispListener): void {
-	    if(listener.enterAtom) {
-	 		listener.enterAtom(this);
+	    if(listener.enterNumber) {
+	 		listener.enterNumber(this);
 		}
 	}
 	public exitRule(listener: tispListener): void {
-	    if(listener.exitAtom) {
-	 		listener.exitAtom(this);
+	    if(listener.exitNumber) {
+	 		listener.exitNumber(this);
 		}
 	}
 	// @Override
 	public accept<Result>(visitor: tispVisitor<Result>): Result {
-		if (visitor.visitAtom) {
-			return visitor.visitAtom(this);
+		if (visitor.visitNumber) {
+			return visitor.visitNumber(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+export class OpContext extends AtomContext {
+	constructor(parser: tispParser, ctx: AtomContext) {
+		super(parser, ctx.parentCtx, ctx.invokingState);
+		super.copyFrom(ctx);
+	}
+	public OP(): TerminalNode {
+		return this.getToken(tispParser.OP, 0);
+	}
+	public enterRule(listener: tispListener): void {
+	    if(listener.enterOp) {
+	 		listener.enterOp(this);
+		}
+	}
+	public exitRule(listener: tispListener): void {
+	    if(listener.exitOp) {
+	 		listener.exitOp(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: tispVisitor<Result>): Result {
+		if (visitor.visitOp) {
+			return visitor.visitOp(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+export class AtomKeyContext extends AtomContext {
+	constructor(parser: tispParser, ctx: AtomContext) {
+		super(parser, ctx.parentCtx, ctx.invokingState);
+		super.copyFrom(ctx);
+	}
+	public key(): KeyContext {
+		return this.getTypedRuleContext(KeyContext, 0) as KeyContext;
+	}
+	public enterRule(listener: tispListener): void {
+	    if(listener.enterAtomKey) {
+	 		listener.enterAtomKey(this);
+		}
+	}
+	public exitRule(listener: tispListener): void {
+	    if(listener.exitAtomKey) {
+	 		listener.exitAtomKey(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: tispVisitor<Result>): Result {
+		if (visitor.visitAtomKey) {
+			return visitor.visitAtomKey(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+export class StringContext extends AtomContext {
+	constructor(parser: tispParser, ctx: AtomContext) {
+		super(parser, ctx.parentCtx, ctx.invokingState);
+		super.copyFrom(ctx);
+	}
+	public STRING(): TerminalNode {
+		return this.getToken(tispParser.STRING, 0);
+	}
+	public enterRule(listener: tispListener): void {
+	    if(listener.enterString) {
+	 		listener.enterString(this);
+		}
+	}
+	public exitRule(listener: tispListener): void {
+	    if(listener.exitString) {
+	 		listener.exitString(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: tispVisitor<Result>): Result {
+		if (visitor.visitString) {
+			return visitor.visitString(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+export class IdContext extends AtomContext {
+	constructor(parser: tispParser, ctx: AtomContext) {
+		super(parser, ctx.parentCtx, ctx.invokingState);
+		super.copyFrom(ctx);
+	}
+	public ID(): TerminalNode {
+		return this.getToken(tispParser.ID, 0);
+	}
+	public enterRule(listener: tispListener): void {
+	    if(listener.enterId) {
+	 		listener.enterId(this);
+		}
+	}
+	public exitRule(listener: tispListener): void {
+	    if(listener.exitId) {
+	 		listener.exitId(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: tispVisitor<Result>): Result {
+		if (visitor.visitId) {
+			return visitor.visitId(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

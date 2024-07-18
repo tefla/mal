@@ -8,7 +8,11 @@ import { S_exprContext } from "./tispParser";
 import { ListContext } from "./tispParser";
 import { ArrayContext } from "./tispParser";
 import { MapContext } from "./tispParser";
-import { AtomContext } from "./tispParser";
+import { IdContext } from "./tispParser";
+import { NumberContext } from "./tispParser";
+import { StringContext } from "./tispParser";
+import { OpContext } from "./tispParser";
+import { AtomKeyContext } from "./tispParser";
 import { KeyContext } from "./tispParser";
 
 
@@ -51,11 +55,40 @@ export default class tispVisitor<Result> extends ParseTreeVisitor<Result> {
 	 */
 	visitMap?: (ctx: MapContext) => Result;
 	/**
-	 * Visit a parse tree produced by `tispParser.atom`.
+	 * Visit a parse tree produced by the `id`
+	 * labeled alternative in `tispParser.atom`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitAtom?: (ctx: AtomContext) => Result;
+	visitId?: (ctx: IdContext) => Result;
+	/**
+	 * Visit a parse tree produced by the `number`
+	 * labeled alternative in `tispParser.atom`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitNumber?: (ctx: NumberContext) => Result;
+	/**
+	 * Visit a parse tree produced by the `string`
+	 * labeled alternative in `tispParser.atom`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitString?: (ctx: StringContext) => Result;
+	/**
+	 * Visit a parse tree produced by the `op`
+	 * labeled alternative in `tispParser.atom`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitOp?: (ctx: OpContext) => Result;
+	/**
+	 * Visit a parse tree produced by the `atomKey`
+	 * labeled alternative in `tispParser.atom`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitAtomKey?: (ctx: AtomKeyContext) => Result;
 	/**
 	 * Visit a parse tree produced by `tispParser.key`.
 	 * @param ctx the parse tree

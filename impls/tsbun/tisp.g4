@@ -17,11 +17,11 @@ map
   : '{' s_expr* '}'
   ;
 atom
-  : ID
-  | NUMBER
-  | STRING
-  | OP
-  | key
+  : ID        #id
+  | NUMBER    #number
+  | STRING    #string
+  | OP        #op
+  | key       #atomKey
   ;
 key: ':' ID;
 ID: [_a-zA-Z]+ [a-zA-Z0-9-_]*;
