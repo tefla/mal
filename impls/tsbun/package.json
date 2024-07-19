@@ -9,12 +9,15 @@
     "typescript": "^5.0.0"
   },
   "scripts": {
-    "test": "npm run test:step0 && npm run test:step1",
+    "test": "npm run test:step0 && npm run test:step1 && npm run test:step2",
     "test:step0": "cd ../.. && make 'test^tsbun^step0'",
-    "test:step1": "cd ../.. && make 'test^tsbun^step1'"
+    "test:step1": "cd ../.. && make 'test^tsbun^step1'",
+    "test:step2": "cd ../.. && make 'test^tsbun^step2'"
   },
   "dependencies": {
     "@types/antlr4": "^4.11.6",
-    "antlr4": "^4.13.1-patch-1"
+    "@types/lodash": "^4.17.7",
+    "antlr4": "^4.13.1-patch-1",
+    "lodash": "^4.17.21"
   }
 }

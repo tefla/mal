@@ -4,8 +4,8 @@ grammar tisp;
 tisp: s_expr+ EOF;
 
 s_expr
-  : (list | array | map)
-  | atom
+  : (list | array | map) #sexpList
+  | atom                 #sexpAtom
   ;
 list
   : '(' s_expr* ')'
@@ -21,10 +21,8 @@ atom
   | NUMBER    #number
   | STRING    #string
   | OP        #op
-  | key       #atomKey
   ;
-key: ':' ID;
-ID: [_a-zA-Z]+ [a-zA-Z0-9-_]*;
+ID: ':'? [_a-zA-Z]+ [a-zA-Z0-9-_]*;
 NUMBER
   : '-'? ([0-9]* '.')? [0-9]+
   ;

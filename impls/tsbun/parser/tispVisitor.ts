@@ -4,7 +4,8 @@ import {ParseTreeVisitor} from 'antlr4';
 
 
 import { TispContext } from "./tispParser";
-import { S_exprContext } from "./tispParser";
+import { SexpListContext } from "./tispParser";
+import { SexpAtomContext } from "./tispParser";
 import { ListContext } from "./tispParser";
 import { ArrayContext } from "./tispParser";
 import { MapContext } from "./tispParser";
@@ -12,8 +13,6 @@ import { IdContext } from "./tispParser";
 import { NumberContext } from "./tispParser";
 import { StringContext } from "./tispParser";
 import { OpContext } from "./tispParser";
-import { AtomKeyContext } from "./tispParser";
-import { KeyContext } from "./tispParser";
 
 
 /**
@@ -31,11 +30,19 @@ export default class tispVisitor<Result> extends ParseTreeVisitor<Result> {
 	 */
 	visitTisp?: (ctx: TispContext) => Result;
 	/**
-	 * Visit a parse tree produced by `tispParser.s_expr`.
+	 * Visit a parse tree produced by the `sexpList`
+	 * labeled alternative in `tispParser.s_expr`.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	visitS_expr?: (ctx: S_exprContext) => Result;
+	visitSexpList?: (ctx: SexpListContext) => Result;
+	/**
+	 * Visit a parse tree produced by the `sexpAtom`
+	 * labeled alternative in `tispParser.s_expr`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitSexpAtom?: (ctx: SexpAtomContext) => Result;
 	/**
 	 * Visit a parse tree produced by `tispParser.list`.
 	 * @param ctx the parse tree
@@ -82,18 +89,5 @@ export default class tispVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitOp?: (ctx: OpContext) => Result;
-	/**
-	 * Visit a parse tree produced by the `atomKey`
-	 * labeled alternative in `tispParser.atom`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitAtomKey?: (ctx: AtomKeyContext) => Result;
-	/**
-	 * Visit a parse tree produced by `tispParser.key`.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	visitKey?: (ctx: KeyContext) => Result;
 }
 
