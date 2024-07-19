@@ -1,6 +1,6 @@
 import tispVisitor from "./parser/tispVisitor.ts";
-import type {RuleNode, TerminalNode} from "antlr4";
-import type {TispContext} from "./parser/tispParser.ts";
+import type { RuleNode, TerminalNode } from "antlr4";
+import type { TispContext } from "./parser/tispParser.ts";
 import {
   ArrayContext,
   AtomContext,
@@ -15,12 +15,12 @@ import {
 } from "lodash/fp"
 
 export const pr_str = (exp: any): string => {
-  if(exp instanceof Array) {
+  if (exp instanceof Array) {
     return `( ${exp.map(pr_str).join(" ")} )`;
   }
   return exp.toString();
 }
-const toStringChildren = ()
+const toStringChildren = () => { }
 abstract class AstNode {
   abstract toString(): string;
   abstract eval(): any;
@@ -41,12 +41,12 @@ class ArrayType extends Array {
 }
 class MapType extends Object {
   toString(): string {
-    return `{ ${Object.entries(this).map(([key, value]) => `${key} ${value.toString()}`).join(" ")} }`;
+    return `{ ${Object.entries(this).map(([key, value]) => `${key} ${value}`).join(" ")} }`;
   }
   static from(arr: any[]): MapType {
     const obj = new MapType();
-    for(let i = 0; i < arr.length; i++) {
-      obj[arr[i][0]] = arr[i][1];
+    for (let i = 0; i < arr.length; i = i + 2) {
+      obj[arr[i]] = arr[i + 1];
     }
     return obj;
   }
@@ -62,7 +62,7 @@ class AtomNode extends AstNode {
     return this.value;
   }
   toJson(): any {
-    return {type: "atom", value: this.value}
+    return { type: "atom", value: this.value }
   }
 }
 class ListNode extends AstNode {
@@ -73,18 +73,18 @@ class ListNode extends AstNode {
     return `(${this.elements.map(node => node.toString()).join(" ")})`;
   }
   toJson(): any {
-    return {type: "list", value: this.elements.map(node => node.toJson())}
+    return { type: "list", value: this.elements.map(node => node.toJson()) }
   }
 
   eval() {
-    if(this.elements.length === 0) return this;
-      // Get the first element of the list
-      const fn = context[this.elements[0].eval()];
-      if(!fn) throw new Error(`Unknown function ${this.elements[0].eval()}`);
-      // Get the rest of the elements
-      const args = this.elements.slice(1).map(node => node.eval());
-      console.log(fn, args)
-      return fn(...args);
+    if (this.elements.length === 0) return this;
+    // Get the first element of the list
+    const fn = context[this.elements[0].eval()];
+    if (!fn) throw new Error(`Unknown function ${this.elements[0].eval()}`);
+    // Get the rest of the elements
+    const args = this.elements.slice(1).map(node => node.eval());
+    console.log(fn, args)
+    return fn(...args);
   }
 }
 class ArrayNode extends AstNode {
@@ -95,12 +95,12 @@ class ArrayNode extends AstNode {
     return `[ ${this.elements.map(node => node.toString()).join(" ")} ]`;
   }
   eval() {
-    const res =this.elements.map(node => node.eval());
+    const res = this.elements.map(node => node.eval());
     console.log(res)
     return ArrayType.from(res)
   }
   toJson(): any {
-    return {type: "array", value: this.elements.map(node => node.toJson())}
+    return { type: "array", value: this.elements.map(node => node.toJson()) }
 
   }
 }
@@ -109,9 +109,9 @@ class MapNode extends AstNode {
     super();
   }
   toString() {
-    console.log("ELEMENTS:",this.elements)
+    console.log("ELEMENTS:", this.elements)
     return `{ ${this.elements.map(node => {
-      console.log("NODE:",node)
+      console.log("NODE:", node)
       node.toString()
     }).join(" ")} }`;
   }
@@ -119,7 +119,7 @@ class MapNode extends AstNode {
     return MapType.from(this.elements.map(node => node.eval()));
   }
   toJson(): any {
-    return {type: "map", value: this.elements.map(node => node.toJson())}
+    return { type: "map", value: this.elements.map(node => node.toJson()) }
   }
 }
 class KeyNode extends AstNode {
@@ -133,7 +133,7 @@ class KeyNode extends AstNode {
     return { [this.key]: this.value.eval() };
   }
   toJson(): any {
-    return {type: "key", key: this.key, value: this.value.toJson()}
+    return { type: "key", key: this.key, value: this.value.toJson() }
   }
 }
 class TispNode extends AstNode {
@@ -148,7 +148,7 @@ class TispNode extends AstNode {
     return last(this.s_expr_list.map(node => node.eval()));
   }
   toJson(): any {
-    return {type: "tisp", value: this.s_expr_list.map(node => node.toJson())}
+    return { type: "tisp", value: this.s_expr_list.map(node => node.toJson()) }
   }
 }
 class SExprNode extends AstNode {
@@ -164,12 +164,12 @@ class SExprNode extends AstNode {
 
   }
   toJson(): any {
-    return {type: "sexp", value: this.children.map(node => node.toJson())}
+    return { type: "sexp", value: this.children.map(node => node.toJson()) }
   }
 }
 
 class AstVisitor extends tispVisitor<AstNode> {
-  visitTisp = (ctx: TispContext): TispNode =>{
+  visitTisp = (ctx: TispContext): TispNode => {
     return new TispNode(ctx.s_expr_list().map(exp => this.visit(exp)));
   }
 
@@ -188,12 +188,12 @@ class AstVisitor extends tispVisitor<AstNode> {
   visitSexpList = (ctx: SexpListContext): SExprNode => {
     return new SExprNode(ctx.children.map(child => this.visit(child)))
   }
-  visitId= (ctx: IdContext): AtomNode => {
+  visitId = (ctx: IdContext): AtomNode => {
     return new AtomNode(ctx.getText());
   }
   visitNumber = (ctx: NumberContext): AtomNode => {
     const numStr = ctx.getText();
-    if(numStr.includes(".")) {
+    if (numStr.includes(".")) {
       return new AtomNode(parseFloat(numStr));
     } else {
       return new AtomNode(parseInt(numStr));
