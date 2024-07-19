@@ -9,10 +9,11 @@
     "typescript": "^5.0.0"
   },
   "scripts": {
-    "test": "npm run test:step0 && npm run test:step1 && npm run test:step2",
+    "test": "npm run test:step0 && npm run test:step1 && npm run test:step2 && npm run test:step3",
     "test:step0": "cd ../.. && make 'test^tsbun^step0'",
     "test:step1": "cd ../.. && make 'test^tsbun^step1'",
-    "test:step2": "cd ../.. && make 'test^tsbun^step2'"
+    "test:step2": "cd ../.. && make 'test^tsbun^step2'",
+    "test:step3": "cd ../.. && make 'test^tsbun^step2'"
   },
   "dependencies": {
     "@types/antlr4": "^4.11.6",

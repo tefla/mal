@@ -12,7 +12,7 @@ import tispParser, {
   TispContext
 } from "./parser/tispParser.ts";
 import tispVisitor from "./parser/tispVisitor.ts";
-import {ArrayNode, AstNode, AtomNode, ListNode, MapNode, SExprNode, TispNode} from "./AST.ts";
+import {ArrayNode, AstNode, AtomNode, IDNode, ListNode, MapNode, SExprNode, TispNode} from "./AST.ts";
 
 
 class Reader {
@@ -33,7 +33,10 @@ export const read_str_antlr = (input: string) => {
   const tokens = new antlr4.CommonTokenStream(lexer);
   const parser = new tispParser(tokens);
   const tree = parser.tisp();
-  return tree;
+  const ast = new AstVisitor();
+  const node = ast.visit(tree);
+
+  return node;
 }
 export const read_str = (input: string) => {
   const tokens = tokenize(input);
@@ -103,7 +106,7 @@ const read_atom = (reader: Reader) => {
   }
 }
 
-export class AstVisitor extends tispVisitor<AstNode> {
+export class AstVisitor<T> extends tispVisitor<T> {
   visitTisp = (ctx: TispContext): TispNode => {
     return new TispNode(ctx.s_expr_list().map(exp => this.visit(exp)));
   }
@@ -117,14 +120,14 @@ export class AstVisitor extends tispVisitor<AstNode> {
   visitMap = (ctx: MapContext): MapNode => {
     return new MapNode(ctx.s_expr_list().map(child => this.visit(child)))
   }
-  visitSexpAtom = (ctx: SexpAtomContext): AstNode => {
-    return this.visit(ctx.atom());
+  visitSexpAtom = (ctx: SexpAtomContext): AtomNode => {
+    return this.visit(ctx.atom()) as AtomNode;
   }
   visitSexpList = (ctx: SexpListContext): SExprNode => {
     return new SExprNode(ctx.children.map(child => this.visit(child)))
   }
   visitId = (ctx: IdContext): AtomNode => {
-    return new AtomNode(ctx.getText());
+    return new IDNode(ctx.getText());
   }
   visitString = (ctx: StringContext): AtomNode => {
     return new AtomNode(ctx.getText());

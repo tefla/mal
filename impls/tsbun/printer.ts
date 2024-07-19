@@ -8,11 +8,7 @@ export const pr_str = (exp: any): string => {
 }
 const toStringChildren = () => { }
 
-export const pr_str_antlr = (exp: any) => {
-  const ast = new AstVisitor();
-  const node = ast.visit(exp);
-
-  const res = node.eval();
+export const pr_str_antlr = (res: any) => {
 
   return res.toString()
 }

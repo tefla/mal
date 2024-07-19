@@ -22,7 +22,7 @@ atom
   | STRING    #string
   | OP        #op
   ;
-ID: ':'? [_a-zA-Z]+ [a-zA-Z0-9-_]*;
+ID: ':'? [_a-zA-Z]+ [a-zA-Z0-9-_!]*;
 NUMBER
   : '-'? ([0-9]* '.')? [0-9]+
   ;

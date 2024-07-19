@@ -2,7 +2,22 @@ export interface BaseType {
   toString(): string;
 }
 
+export class AtomType implements BaseType {
+  constructor(public value: any) {
+  }
+  toString(): string {
+    return this.value.toString();
+  }
+  valueOf(): any {
+    return this.value;
+  }
+}
 
+export class IDType extends AtomType {
+  toString(): string {
+    return this.value;
+  }
+}
 export class ArrayType implements BaseType {
   constructor(public elements: BaseType[]) {
   }
