@@ -1,10 +1,17 @@
-export class ArrayType extends Array {
+export interface BaseType {
+  toString(): string;
+}
+
+
+export class ArrayType implements BaseType {
+  constructor(public elements: BaseType[]) {
+  }
   toString(): string {
-    return `[${this.map(node => node.toString()).join(" ")}]`;
+    return `[${this.elements.map(node => node.toString()).join(" ")}]`;
   }
 }
 
-export class MapType extends Object {
+export class MapType extends Object implements BaseType {
   toString(): string {
     return `{${Object.entries(this).map(([key, value]) => `${key} ${value}`).join(" ")}}`;
   }

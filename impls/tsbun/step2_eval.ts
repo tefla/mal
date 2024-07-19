@@ -26,5 +26,3 @@ const repl = async () => {
 }
 repl();
 
-console.log(rep("{:a 1 :b 2 :a 3}"));
-console.log(rep('{:a (+ 4 8)}'));

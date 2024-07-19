@@ -1,5 +1,6 @@
-import {last} from "lodash/fp";
-import {ArrayType, MapType} from "./types";
+import { last } from "lodash/fp";
+import { ArrayType, MapType } from "./types";
+import type { BaseType } from "typescript";
 
 const context = {
   '+': (a: number, b: number) => a + b,
@@ -7,7 +8,14 @@ const context = {
   '*': (a: number, b: number) => a * b,
   '/': (a: number, b: number) => a / b,
 };
+export abstract class AstNode<T = BaseType> {
+  abstract toString(): string;
 
+  abstract eval(): T;
+
+  abstract toJson(): any;
+
+}
 export class AtomNode extends AstNode {
   constructor(public value: any) {
     super();
@@ -22,7 +30,7 @@ export class AtomNode extends AstNode {
   }
 
   toJson(): any {
-    return {type: "atom", value: this.value}
+    return { type: "atom", value: this.value }
   }
 }
 
@@ -36,13 +44,18 @@ export class ListNode extends AstNode {
   }
 
   toJson(): any {
-    return {type: "list", value: this.elements.map(node => node.toJson())}
+    return { type: "list", value: this.elements.map(node => node.toJson()) }
   }
 
   eval() {
     if (this.elements.length === 0) return this;
     // Get the first element of the list
-    const fn = context[this.elements[0].eval()];
+    const fnName = this.elements[0].eval();
+    if (typeof fnName !== "string" || context[fnName] === undefined) {
+      throw new Error(`Unknown function ${this.elements[0].eval()}`);
+    }
+
+    const fn: Function = context[fnName];
     if (!fn) throw new Error(`Unknown function ${this.elements[0].eval()}`);
     // Get the rest of the elements
     const args = this.elements.slice(1).map(node => node.eval());
@@ -50,7 +63,7 @@ export class ListNode extends AstNode {
   }
 }
 
-export class ArrayNode extends AstNode {
+export class ArrayNode extends AstNode<ArrayType> {
   constructor(public elements: AstNode[]) {
     super();
   }
@@ -61,16 +74,16 @@ export class ArrayNode extends AstNode {
 
   eval() {
     const res = this.elements.map(node => node.eval());
-    return ArrayType.from(res)
+    return new ArrayType(res);
   }
 
   toJson(): any {
-    return {type: "array", value: this.elements.map(node => node.toJson())}
+    return { type: "array", value: this.elements.map(node => node.toJson()) }
 
   }
 }
 
-export class MapNode extends AstNode {
+export class MapNode extends AstNode<MapType> {
   constructor(public elements: AstNode[]) {
     super();
   }
@@ -86,7 +99,7 @@ export class MapNode extends AstNode {
   }
 
   toJson(): any {
-    return {type: "map", value: this.elements.map(node => node.toJson())}
+    return { type: "map", value: this.elements.map(node => node.toJson()) }
   }
 }
 
@@ -100,15 +113,15 @@ class KeyNode extends AstNode {
   }
 
   eval(): any {
-    return {[this.key]: this.value.eval()};
+    return { [this.key]: this.value.eval() };
   }
 
   toJson(): any {
-    return {type: "key", key: this.key, value: this.value.toJson()}
+    return { type: "key", key: this.key, value: this.value.toJson() }
   }
 }
 
-export class TispNode extends AstNode {
+export class TispNode extends AstNode<any> {
   constructor(public s_expr_list: AstNode[]) {
     super();
   }
@@ -122,7 +135,7 @@ export class TispNode extends AstNode {
   }
 
   toJson(): any {
-    return {type: "tisp", value: this.s_expr_list.map(node => node.toJson())}
+    return { type: "tisp", value: this.s_expr_list.map(node => node.toJson()) }
   }
 }
 
@@ -141,15 +154,7 @@ export class SExprNode extends AstNode {
   }
 
   toJson(): any {
-    return {type: "sexp", value: this.children.map(node => node.toJson())}
+    return { type: "sexp", value: this.children.map(node => node.toJson()) }
   }
 }
 
-export abstract class AstNode {
-  abstract toString(): string;
-
-  abstract eval(): any;
-
-  abstract toJson(): any;
-
-}
