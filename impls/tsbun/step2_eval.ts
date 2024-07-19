@@ -24,6 +24,7 @@ const repl = async () => {
     process.stdout.write(prompt);
   }
 }
-//repl();
+repl();
 
 console.log(rep("{:a 1 :b 2 :a 3}"));
+console.log(rep('{:a (+ 4 8)}'));

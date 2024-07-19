@@ -1,6 +1,18 @@
 import antlr4 from "antlr4";
 import tispLexer from "./parser/tispLexer.ts";
-import tispParser from "./parser/tispParser.ts";
+import tispParser, {
+  ArrayContext,
+  IdContext,
+  ListContext,
+  MapContext,
+  NumberContext,
+  OpContext,
+  SexpAtomContext,
+  SexpListContext, StringContext,
+  TispContext
+} from "./parser/tispParser.ts";
+import tispVisitor from "./parser/tispVisitor.ts";
+import {ArrayNode, AstNode, AtomNode, ListNode, MapNode, SExprNode, TispNode} from "./AST.ts";
 
 
 class Reader {
@@ -89,4 +101,44 @@ const read_atom = (reader: Reader) => {
   } else {
     return token;
   }
+}
+
+export class AstVisitor extends tispVisitor<AstNode> {
+  visitTisp = (ctx: TispContext): TispNode => {
+    return new TispNode(ctx.s_expr_list().map(exp => this.visit(exp)));
+  }
+
+  visitList = (ctx: ListContext): ListNode => {
+    return new ListNode(ctx.s_expr_list().map(child => this.visit(child)))
+  }
+  visitArray = (ctx: ArrayContext): ArrayNode => {
+    return new ArrayNode(ctx.s_expr_list().map(child => this.visit(child)))
+  }
+  visitMap = (ctx: MapContext): MapNode => {
+    return new MapNode(ctx.s_expr_list().map(child => this.visit(child)))
+  }
+  visitSexpAtom = (ctx: SexpAtomContext): AstNode => {
+    return this.visit(ctx.atom());
+  }
+  visitSexpList = (ctx: SexpListContext): SExprNode => {
+    return new SExprNode(ctx.children.map(child => this.visit(child)))
+  }
+  visitId = (ctx: IdContext): AtomNode => {
+    return new AtomNode(ctx.getText());
+  }
+  visitString = (ctx: StringContext): AtomNode => {
+    return new AtomNode(ctx.getText());
+  }
+  visitNumber = (ctx: NumberContext): AtomNode => {
+    const numStr = ctx.getText();
+    if (numStr.includes(".")) {
+      return new AtomNode(parseFloat(numStr));
+    } else {
+      return new AtomNode(parseInt(numStr));
+    }
+  }
+  visitOp = (ctx: OpContext): AtomNode => {
+    return new AtomNode(ctx.getText());
+  }
+
 }
