@@ -1,4 +1,4 @@
-// Generated from /home/tim/dev/mal/impls/tsbun/tisp.g4 by ANTLR 4.13.1
+// Generated from /Users/tim/dev/playground/mal/impls/tsbun/tisp.g4 by ANTLR 4.13.1
 
 import {ParseTreeVisitor} from 'antlr4';
 

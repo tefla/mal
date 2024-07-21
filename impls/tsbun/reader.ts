@@ -1,4 +1,4 @@
-import antlr4 from "antlr4";
+import antlr4, {type Lexer, tree} from "antlr4";
 import tispLexer from "./parser/tispLexer.ts";
 import tispParser, {
   ArrayContext,
@@ -12,133 +12,68 @@ import tispParser, {
   TispContext
 } from "./parser/tispParser.ts";
 import tispVisitor from "./parser/tispVisitor.ts";
-import {ArrayNode, AstNode, AtomNode, ListNode, MapNode, SExprNode, TispNode} from "./AST.ts";
+import {VectorType,  IdentType, ListType, NumberType, type TispType, TispProgramType} from "./types.ts";
+import {last} from "lodash/fp";
 
 
-class Reader {
-  private pos = 0;
-  constructor(private tokens: string[]) {  }
-  next(){
-    const ret = this.peek();
-    this.pos += 1;
-    return ret;
-  }
-  peek(){
-    return this.tokens[this.pos];
-  }
-}
 export const read_str_antlr = (input: string) => {
-  const chars = new antlr4.CharStream(input);
-  const lexer = new tispLexer(chars);
-  const tokens = new antlr4.CommonTokenStream(lexer);
+  const chars = antlr4.CharStreams.fromString(input);
+  const lexer: Lexer = new tispLexer(chars);
+  const tokens = new antlr4.CommonTokenStream(lexer)
   const parser = new tispParser(tokens);
   const tree = parser.tisp();
-  return tree;
-}
-export const read_str = (input: string) => {
-  const tokens = tokenize(input);
-  const reader = new Reader(tokens);
-  return read_form(reader);
+  const ast = new AstVisitor();
+  const node = ast.visit(tree);
+  return node;
 }
 
-const tokenize = (input: string) => {
-  const tok_regex = /[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*)/;
-  const tokens: string[] = [];
-  while(true) {
-    const matches = input.match(tok_regex);
-    if(!matches) {
-      break;
-    }
-    const match = matches[1];
-    if(match === "") {
-      break;
-    }
-    if(match[0] !== ";") {
-      tokens.push(match);
-    }
-    input = input.slice(matches[0].length);
-  }
-  return tokens;
-}
+export class AstVisitor extends tispVisitor<TispType> {
+  [x: string]: any;
 
-const read_form = (reader: Reader) => {
-  const token = reader.peek();
-  switch(token) {
-    case '(':
-      return read_list(reader, ')');
-    case '[':
-      return read_list(reader, ']');
-    case '{':
-      return read_list(reader, '}');
-    case ')':
-      throw new Error("unexpected ')'");
-    case ']':
-      throw new Error("unexpected ']'");
-    case '}':
-      throw new Error("unexpected '}'");
-    default:
-      return read_atom(reader);
-  }
-}
-const read_list = (reader: Reader, close: string) => {
-  const token = reader.next();
-
-  const ast = [];
-  while(reader.peek() !== close) {
-    if(reader.peek() === undefined) {
-      throw new Error("unbalanced");
-    }
-    ast.push(read_form(reader));
-  }
-  reader.next();
-  return ast;
-}
-
-const read_atom = (reader: Reader) => {
-  const token = reader.next();
-  if(token.match(/^-?[0-9]+$/)) {
-    return parseInt(token);
-  } else {
-    return token;
-  }
-}
-
-export class AstVisitor extends tispVisitor<AstNode> {
-  visitTisp = (ctx: TispContext): TispNode => {
-    return new TispNode(ctx.s_expr_list().map(exp => this.visit(exp)));
+  visitTisp = (ctx: TispContext): TispType => {
+    return new TispProgramType(ctx.s_expr_list().map(exp => this.visit(exp)));
   }
 
-  visitList = (ctx: ListContext): ListNode => {
-    return new ListNode(ctx.s_expr_list().map(child => this.visit(child)))
+  visitList = (ctx: ListContext): ListType => {
+    return new ListType(ctx.s_expr_list().map(child => {
+      return this.visit(child)
+    }))
   }
-  visitArray = (ctx: ArrayContext): ArrayNode => {
-    return new ArrayNode(ctx.s_expr_list().map(child => this.visit(child)))
+  visitArray = (ctx: ArrayContext): VectorType => {
+    return new VectorType(ctx.s_expr_list().map(child => {
+      return this.visit(child)
+    }))
   }
-  visitMap = (ctx: MapContext): MapNode => {
-    return new MapNode(ctx.s_expr_list().map(child => this.visit(child)))
+  visitMap = (ctx: MapContext): TispType => {
+    //return new MapType(ctx.s_expr_list().map(child => this.visit(child)))
+    throw new Error("Not implemented")
   }
-  visitSexpAtom = (ctx: SexpAtomContext): AstNode => {
+  visitSexpAtom = (ctx: SexpAtomContext): TispType => {
+    
     return this.visit(ctx.atom());
+
   }
-  visitSexpList = (ctx: SexpListContext): SExprNode => {
-    return new SExprNode(ctx.children.map(child => this.visit(child)))
+  visitSexpList = (ctx: SexpListContext): TispType => {
+    const list = ctx.list() || ctx.array() || ctx.map();
+    return this.visit(list);
   }
-  visitId = (ctx: IdContext): AtomNode => {
-    return new AtomNode(ctx.getText());
+  visitId = (ctx: IdContext): IdentType => {
+    return new IdentType(ctx.getText());
   }
-  visitString = (ctx: StringContext): AtomNode => {
-    return new AtomNode(ctx.getText());
+  visitString = (ctx: StringContext): TispType => {
+    //return new AtomType(ctx.getText());
+    throw new Error("Not implemented")
   }
-  visitNumber = (ctx: NumberContext): AtomNode => {
+  visitNumber = (ctx: NumberContext): NumberType => {
     const numStr = ctx.getText();
     if (numStr.includes(".")) {
-      return new AtomNode(parseFloat(numStr));
+      return new NumberType(parseFloat(numStr));
     } else {
-      return new AtomNode(parseInt(numStr));
+      return new NumberType(parseInt(numStr));
     }
   }
-  visitOp = (ctx: OpContext): AtomNode => {
-    return new AtomNode(ctx.getText());
+  visitOp = (ctx: OpContext): IdentType => {
+    return new IdentType(ctx.getText());
   }
 
 }
