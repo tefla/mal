@@ -1,7 +1,7 @@
-import {  read_str_antlr } from "./reader.ts";
+import { read_str_antlr } from "./reader.ts";
 import { pr_str_antlr } from "./printer.ts";
-import {Env} from "./env.ts";
-import { FunctionType, VectorType, type TispType, Node, ListType, isSeq, NumberType, True, False , equals, Nil} from "./types.ts";
+import { Env } from "./env.ts";
+import { FunctionType, VectorType, type TispType, Node, ListType, isSeq, NumberType, True, False, equals, Nil } from "./types.ts";
 import { AstNode, AtomNode } from "./AST.ts";
 import { first } from "lodash/fp";
 import { ns } from "./core.ts";
@@ -13,12 +13,12 @@ Object.entries(ns).map(([key, value]) => {
 
 
 const eval_ast = (ast: TispType, env: Env): TispType => {
-  switch(ast.type){
+  switch (ast.type) {
     case Node.Program:
       return ast.elements.map(node => eval_mal(node, env)).pop();
     case Node.Ident:
       const value = env.get(ast.value);
-      if(!value){
+      if (!value) {
         throw new Error(`${ast.value} not found `)
       }
       return value;
@@ -26,25 +26,25 @@ const eval_ast = (ast: TispType, env: Env): TispType => {
       return new ListType(ast.elements.map(node => eval_mal(node, env)));
     case Node.Vector:
       return new VectorType(ast.elements.map(node => eval_mal(node, env)));
-    
+
     default:
       return ast;
   }
 }
 
 const eval_mal = (ast: TispType, env: Env): any => {
-  if(ast.type !== Node.List){
+  if (ast.type !== Node.List) {
     return eval_ast(ast, env);
   }
-  if(ast.elements.length < 1){
+  if (ast.elements.length < 1) {
     return ast;
   }
   // Check if special form
   const [firstParam, ...rest] = ast.elements
-  switch(firstParam.type){
+  switch (firstParam.type) {
     case Node.Ident:
-      switch(firstParam.value){
-        case 'def!':{
+      switch (firstParam.value) {
+        case 'def!': {
           const [key, value] = rest;
           const evalValue = eval_mal(value, env);
           env.set(key.value, evalValue);
@@ -53,8 +53,8 @@ const eval_mal = (ast: TispType, env: Env): any => {
         case 'let*': {
           const [bindings, body] = rest;
           const letEnv = new Env(env);
-          for(let i = 0; i < bindings.elements.length; i+=2){
-            letEnv.set(bindings.elements[i].value, eval_mal(bindings.elements[i+1], letEnv));
+          for (let i = 0; i < bindings.elements.length; i += 2) {
+            letEnv.set(bindings.elements[i].value, eval_mal(bindings.elements[i + 1], letEnv));
           }
           return eval_mal(body, letEnv);
         }
@@ -64,10 +64,10 @@ const eval_mal = (ast: TispType, env: Env): any => {
         case 'if': {
           const [condition, trueBranch, falseBranch] = rest
           const evalCondition = eval_mal(condition, env);
-          if(!equals(evalCondition, False) && !equals(evalCondition, Nil)){
+          if (!equals(evalCondition, False) && !equals(evalCondition, Nil)) {
             return eval_mal(trueBranch, env);
           } else {
-            if(!falseBranch){
+            if (!falseBranch) {
               return Nil;
             }
             return eval_mal(falseBranch, env);
@@ -75,10 +75,10 @@ const eval_mal = (ast: TispType, env: Env): any => {
         }
         case 'fn*': {
           const [params, body] = rest;
-          if(!isSeq(params)){
+          if (!isSeq(params)) {
             throw new Error(`Expected vector but got ${params}`);
           }
-          return FunctionType.fromAst(eval_mal, env, params.elements.map(a=>a.toString()), body);
+          return FunctionType.fromAst(eval_mal, env, params.elements.map(a => a.toString()), body);
         }
       }
   }
@@ -87,15 +87,15 @@ const eval_mal = (ast: TispType, env: Env): any => {
 
   // otherwise Evaluate the function
   const result = eval_ast(ast, env);
-  if(!isSeq(result)){
+  if (!isSeq(result)) {
     throw new Error(`Not a function ${result}`);
   }
   const [fn, ...args] = result.elements
-  if(fn.type !== Node.Function){
+  if (fn.type !== Node.Function) {
     throw new Error(`Not a function ${fn}`);
   }
   return fn.func(...args);
-  
+
 }
 const READ = (str: string): any => read_str_antlr(str);
 const EVAL = (ast: any, _env?: any): any => eval_mal(ast, _env);
@@ -120,12 +120,7 @@ const repl = async () => {
     process.stdout.write(prompt);
   }
 }
-
-rep(`
-
-(def! not (fn* [a] (if a false true)))
-
-(= [1 2 (list 3 4 [5 6])] (list 1 2 [3 4 (list 5 6)])) 
-`)
+rep('(def! not (fn* (a) (if a false true)))')
 
 repl();
+//console.log(rep(`(println "\\"")`))

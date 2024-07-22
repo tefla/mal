@@ -1,4 +1,4 @@
-import type {BaseType} from "./types.ts";
+import { ListType, type BaseType } from "./types.ts";
 
 export class Env {
     data: Map<string, any>;
@@ -8,6 +8,11 @@ export class Env {
         this.data = new Map<string, any>();
         this.outer = outer;
         for (let i = 0; i < binds.length; i++) {
+            const bind = binds[i];
+            if (bind === "&") {
+                this.data.set(binds[i + 1], new ListType(exprs.slice(i)));
+                break;
+            }
             this.data.set(binds[i], exprs[i]);
         }
     }
@@ -18,10 +23,10 @@ export class Env {
 
     find(key: string): any {
         if (this.data.has(key)) {
-        return this;
+            return this;
         }
         if (this.outer) {
-        return this.outer.find(key);
+            return this.outer.find(key);
         }
         return null;
     }
@@ -29,7 +34,7 @@ export class Env {
     get(key: string): any {
         const env = this.find(key);
         if (env) {
-        return env.data.get(key);
+            return env.data.get(key);
         }
         return null;
     }

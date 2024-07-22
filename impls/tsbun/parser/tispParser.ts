@@ -1,4 +1,4 @@
-// Generated from /Users/tim/dev/playground/mal/impls/tsbun/tisp.g4 by ANTLR 4.13.1
+// Generated from /home/tim/dev/mal/impls/tsbun/tisp.g4 by ANTLR 4.13.1
 // noinspection ES6UnusedImports,JSUnusedGlobalSymbols,JSUnusedLocalSymbols
 
 import {
@@ -29,8 +29,9 @@ export default class tispParser extends Parser {
 	public static readonly LABEL = 8;
 	public static readonly NUMBER = 9;
 	public static readonly STRING = 10;
-	public static readonly OP = 11;
-	public static readonly WS = 12;
+	public static readonly ESC = 11;
+	public static readonly OP = 12;
+	public static readonly WS = 13;
 	public static readonly EOF = Token.EOF;
 	public static readonly RULE_tisp = 0;
 	public static readonly RULE_s_expr = 1;
@@ -47,8 +48,8 @@ export default class tispParser extends Parser {
                                                              null, null, 
                                                              null, "ID", 
                                                              "LABEL", "NUMBER", 
-                                                             "STRING", "OP", 
-                                                             "WS" ];
+                                                             "STRING", "ESC", 
+                                                             "OP", "WS" ];
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
 		"tisp", "s_expr", "list", "array", "map", "atom",
@@ -88,7 +89,7 @@ export default class tispParser extends Parser {
 				this.state = 15;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 4010) !== 0));
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 6058) !== 0));
 			this.state = 17;
 			this.match(tispParser.EOF);
 			}
@@ -151,7 +152,7 @@ export default class tispParser extends Parser {
 			case 8:
 			case 9:
 			case 10:
-			case 11:
+			case 12:
 				localctx = new SexpAtomContext(this, localctx);
 				this.enterOuterAlt(localctx, 2);
 				{
@@ -190,7 +191,7 @@ export default class tispParser extends Parser {
 			this.state = 31;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 4010) !== 0)) {
+			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 6058) !== 0)) {
 				{
 				{
 				this.state = 28;
@@ -232,7 +233,7 @@ export default class tispParser extends Parser {
 			this.state = 40;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 4010) !== 0)) {
+			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 6058) !== 0)) {
 				{
 				{
 				this.state = 37;
@@ -274,7 +275,7 @@ export default class tispParser extends Parser {
 			this.state = 49;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 4010) !== 0)) {
+			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 6058) !== 0)) {
 				{
 				{
 				this.state = 46;
@@ -343,7 +344,7 @@ export default class tispParser extends Parser {
 				this.match(tispParser.STRING);
 				}
 				break;
-			case 11:
+			case 12:
 				localctx = new OpContext(this, localctx);
 				this.enterOuterAlt(localctx, 5);
 				{
@@ -370,7 +371,7 @@ export default class tispParser extends Parser {
 		return localctx;
 	}
 
-	public static readonly _serializedATN: number[] = [4,1,12,62,2,0,7,0,2,
+	public static readonly _serializedATN: number[] = [4,1,13,62,2,0,7,0,2,
 	1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,1,0,4,0,14,8,0,11,0,12,0,15,1,0,1,
 	0,1,1,1,1,1,1,3,1,23,8,1,1,1,3,1,26,8,1,1,2,1,2,5,2,30,8,2,10,2,12,2,33,
 	9,2,1,2,1,2,1,3,1,3,5,3,39,8,3,10,3,12,3,42,9,3,1,3,1,3,1,4,1,4,5,4,48,
@@ -386,7 +387,7 @@ export default class tispParser extends Parser {
 	1,0,0,0,41,43,1,0,0,0,42,40,1,0,0,0,43,44,5,4,0,0,44,7,1,0,0,0,45,49,5,
 	5,0,0,46,48,3,2,1,0,47,46,1,0,0,0,48,51,1,0,0,0,49,47,1,0,0,0,49,50,1,0,
 	0,0,50,52,1,0,0,0,51,49,1,0,0,0,52,53,5,6,0,0,53,9,1,0,0,0,54,60,5,7,0,
-	0,55,60,5,9,0,0,56,60,5,8,0,0,57,60,5,10,0,0,58,60,5,11,0,0,59,54,1,0,0,
+	0,55,60,5,9,0,0,56,60,5,8,0,0,57,60,5,10,0,0,58,60,5,12,0,0,59,54,1,0,0,
 	0,59,55,1,0,0,0,59,56,1,0,0,0,59,57,1,0,0,0,59,58,1,0,0,0,60,11,1,0,0,0,
 	7,15,22,25,31,40,49,59];
 

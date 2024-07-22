@@ -1,4 +1,4 @@
-import antlr4, {type Lexer, tree} from "antlr4";
+import antlr4, { type Lexer, tree } from "antlr4";
 import tispLexer from "./parser/tispLexer.ts";
 import tispParser, {
   ArrayContext,
@@ -13,8 +13,8 @@ import tispParser, {
   TispContext
 } from "./parser/tispParser.ts";
 import tispVisitor from "./parser/tispVisitor.ts";
-import {VectorType,  IdentType, ListType, NumberType, type TispType, TispProgramType, StringType, AtomType} from "./types.ts";
-import {last} from "lodash/fp";
+import { VectorType, IdentType, ListType, NumberType, type TispType, TispProgramType, StringType, AtomType } from "./types.ts";
+import { last } from "lodash/fp";
 
 
 export const read_str_antlr = (input: string) => {
@@ -50,7 +50,7 @@ export class AstVisitor extends tispVisitor<TispType> {
     throw new Error("Not implemented")
   }
   visitSexpAtom = (ctx: SexpAtomContext): TispType => {
-    
+
     return this.visit(ctx.atom());
 
   }
@@ -62,8 +62,10 @@ export class AstVisitor extends tispVisitor<TispType> {
     return new IdentType(ctx.getText());
   }
   visitString = (ctx: StringContext): TispType => {
-    return new StringType(ctx.getText().slice(1, -1));
-    
+    const str = ctx.getText().slice(1, -1).replace(/\\(.)/g, (_, c: string) => c == 'n' ? '\n' : c);
+
+    return new StringType(str);
+
   }
   visitNumber = (ctx: NumberContext): NumberType => {
     const numStr = ctx.getText();
