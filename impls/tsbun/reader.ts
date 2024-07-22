@@ -3,6 +3,7 @@ import tispLexer from "./parser/tispLexer.ts";
 import tispParser, {
   ArrayContext,
   IdContext,
+  LabelContext,
   ListContext,
   MapContext,
   NumberContext,
@@ -12,7 +13,7 @@ import tispParser, {
   TispContext
 } from "./parser/tispParser.ts";
 import tispVisitor from "./parser/tispVisitor.ts";
-import {VectorType,  IdentType, ListType, NumberType, type TispType, TispProgramType} from "./types.ts";
+import {VectorType,  IdentType, ListType, NumberType, type TispType, TispProgramType, StringType, AtomType} from "./types.ts";
 import {last} from "lodash/fp";
 
 
@@ -61,8 +62,8 @@ export class AstVisitor extends tispVisitor<TispType> {
     return new IdentType(ctx.getText());
   }
   visitString = (ctx: StringContext): TispType => {
-    //return new AtomType(ctx.getText());
-    throw new Error("Not implemented")
+    return new StringType(ctx.getText().slice(1, -1));
+    
   }
   visitNumber = (ctx: NumberContext): NumberType => {
     const numStr = ctx.getText();
@@ -74,6 +75,9 @@ export class AstVisitor extends tispVisitor<TispType> {
   }
   visitOp = (ctx: OpContext): IdentType => {
     return new IdentType(ctx.getText());
+  }
+  visitLabel = (ctx: LabelContext): TispType => {
+    return new AtomType(ctx.getText());
   }
 
 }

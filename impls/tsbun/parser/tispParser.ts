@@ -26,10 +26,11 @@ export default class tispParser extends Parser {
 	public static readonly T__4 = 5;
 	public static readonly T__5 = 6;
 	public static readonly ID = 7;
-	public static readonly NUMBER = 8;
-	public static readonly STRING = 9;
-	public static readonly OP = 10;
-	public static readonly WS = 11;
+	public static readonly LABEL = 8;
+	public static readonly NUMBER = 9;
+	public static readonly STRING = 10;
+	public static readonly OP = 11;
+	public static readonly WS = 12;
 	public static readonly EOF = Token.EOF;
 	public static readonly RULE_tisp = 0;
 	public static readonly RULE_s_expr = 1;
@@ -45,8 +46,9 @@ export default class tispParser extends Parser {
                                                              null, null, 
                                                              null, null, 
                                                              null, "ID", 
-                                                             "NUMBER", "STRING", 
-                                                             "OP", "WS" ];
+                                                             "LABEL", "NUMBER", 
+                                                             "STRING", "OP", 
+                                                             "WS" ];
 	// tslint:disable:no-trailing-whitespace
 	public static readonly ruleNames: string[] = [
 		"tisp", "s_expr", "list", "array", "map", "atom",
@@ -86,7 +88,7 @@ export default class tispParser extends Parser {
 				this.state = 15;
 				this._errHandler.sync(this);
 				_la = this._input.LA(1);
-			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1962) !== 0));
+			} while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 4010) !== 0));
 			this.state = 17;
 			this.match(tispParser.EOF);
 			}
@@ -149,6 +151,7 @@ export default class tispParser extends Parser {
 			case 8:
 			case 9:
 			case 10:
+			case 11:
 				localctx = new SexpAtomContext(this, localctx);
 				this.enterOuterAlt(localctx, 2);
 				{
@@ -187,7 +190,7 @@ export default class tispParser extends Parser {
 			this.state = 31;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1962) !== 0)) {
+			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 4010) !== 0)) {
 				{
 				{
 				this.state = 28;
@@ -229,7 +232,7 @@ export default class tispParser extends Parser {
 			this.state = 40;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1962) !== 0)) {
+			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 4010) !== 0)) {
 				{
 				{
 				this.state = 37;
@@ -271,7 +274,7 @@ export default class tispParser extends Parser {
 			this.state = 49;
 			this._errHandler.sync(this);
 			_la = this._input.LA(1);
-			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 1962) !== 0)) {
+			while ((((_la) & ~0x1F) === 0 && ((1 << _la) & 4010) !== 0)) {
 				{
 				{
 				this.state = 46;
@@ -305,7 +308,7 @@ export default class tispParser extends Parser {
 		let localctx: AtomContext = new AtomContext(this, this._ctx, this.state);
 		this.enterRule(localctx, 10, tispParser.RULE_atom);
 		try {
-			this.state = 58;
+			this.state = 59;
 			this._errHandler.sync(this);
 			switch (this._input.LA(1)) {
 			case 7:
@@ -316,7 +319,7 @@ export default class tispParser extends Parser {
 				this.match(tispParser.ID);
 				}
 				break;
-			case 8:
+			case 9:
 				localctx = new NumberContext(this, localctx);
 				this.enterOuterAlt(localctx, 2);
 				{
@@ -324,19 +327,27 @@ export default class tispParser extends Parser {
 				this.match(tispParser.NUMBER);
 				}
 				break;
-			case 9:
-				localctx = new StringContext(this, localctx);
+			case 8:
+				localctx = new LabelContext(this, localctx);
 				this.enterOuterAlt(localctx, 3);
 				{
 				this.state = 56;
-				this.match(tispParser.STRING);
+				this.match(tispParser.LABEL);
 				}
 				break;
 			case 10:
-				localctx = new OpContext(this, localctx);
+				localctx = new StringContext(this, localctx);
 				this.enterOuterAlt(localctx, 4);
 				{
 				this.state = 57;
+				this.match(tispParser.STRING);
+				}
+				break;
+			case 11:
+				localctx = new OpContext(this, localctx);
+				this.enterOuterAlt(localctx, 5);
+				{
+				this.state = 58;
 				this.match(tispParser.OP);
 				}
 				break;
@@ -359,24 +370,25 @@ export default class tispParser extends Parser {
 		return localctx;
 	}
 
-	public static readonly _serializedATN: number[] = [4,1,11,61,2,0,7,0,2,
+	public static readonly _serializedATN: number[] = [4,1,12,62,2,0,7,0,2,
 	1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,1,0,4,0,14,8,0,11,0,12,0,15,1,0,1,
 	0,1,1,1,1,1,1,3,1,23,8,1,1,1,3,1,26,8,1,1,2,1,2,5,2,30,8,2,10,2,12,2,33,
 	9,2,1,2,1,2,1,3,1,3,5,3,39,8,3,10,3,12,3,42,9,3,1,3,1,3,1,4,1,4,5,4,48,
-	8,4,10,4,12,4,51,9,4,1,4,1,4,1,5,1,5,1,5,1,5,3,5,59,8,5,1,5,0,0,6,0,2,4,
-	6,8,10,0,0,64,0,13,1,0,0,0,2,25,1,0,0,0,4,27,1,0,0,0,6,36,1,0,0,0,8,45,
-	1,0,0,0,10,58,1,0,0,0,12,14,3,2,1,0,13,12,1,0,0,0,14,15,1,0,0,0,15,13,1,
-	0,0,0,15,16,1,0,0,0,16,17,1,0,0,0,17,18,5,0,0,1,18,1,1,0,0,0,19,23,3,4,
-	2,0,20,23,3,6,3,0,21,23,3,8,4,0,22,19,1,0,0,0,22,20,1,0,0,0,22,21,1,0,0,
-	0,23,26,1,0,0,0,24,26,3,10,5,0,25,22,1,0,0,0,25,24,1,0,0,0,26,3,1,0,0,0,
-	27,31,5,1,0,0,28,30,3,2,1,0,29,28,1,0,0,0,30,33,1,0,0,0,31,29,1,0,0,0,31,
-	32,1,0,0,0,32,34,1,0,0,0,33,31,1,0,0,0,34,35,5,2,0,0,35,5,1,0,0,0,36,40,
-	5,3,0,0,37,39,3,2,1,0,38,37,1,0,0,0,39,42,1,0,0,0,40,38,1,0,0,0,40,41,1,
-	0,0,0,41,43,1,0,0,0,42,40,1,0,0,0,43,44,5,4,0,0,44,7,1,0,0,0,45,49,5,5,
-	0,0,46,48,3,2,1,0,47,46,1,0,0,0,48,51,1,0,0,0,49,47,1,0,0,0,49,50,1,0,0,
-	0,50,52,1,0,0,0,51,49,1,0,0,0,52,53,5,6,0,0,53,9,1,0,0,0,54,59,5,7,0,0,
-	55,59,5,8,0,0,56,59,5,9,0,0,57,59,5,10,0,0,58,54,1,0,0,0,58,55,1,0,0,0,
-	58,56,1,0,0,0,58,57,1,0,0,0,59,11,1,0,0,0,7,15,22,25,31,40,49,58];
+	8,4,10,4,12,4,51,9,4,1,4,1,4,1,5,1,5,1,5,1,5,1,5,3,5,60,8,5,1,5,0,0,6,0,
+	2,4,6,8,10,0,0,66,0,13,1,0,0,0,2,25,1,0,0,0,4,27,1,0,0,0,6,36,1,0,0,0,8,
+	45,1,0,0,0,10,59,1,0,0,0,12,14,3,2,1,0,13,12,1,0,0,0,14,15,1,0,0,0,15,13,
+	1,0,0,0,15,16,1,0,0,0,16,17,1,0,0,0,17,18,5,0,0,1,18,1,1,0,0,0,19,23,3,
+	4,2,0,20,23,3,6,3,0,21,23,3,8,4,0,22,19,1,0,0,0,22,20,1,0,0,0,22,21,1,0,
+	0,0,23,26,1,0,0,0,24,26,3,10,5,0,25,22,1,0,0,0,25,24,1,0,0,0,26,3,1,0,0,
+	0,27,31,5,1,0,0,28,30,3,2,1,0,29,28,1,0,0,0,30,33,1,0,0,0,31,29,1,0,0,0,
+	31,32,1,0,0,0,32,34,1,0,0,0,33,31,1,0,0,0,34,35,5,2,0,0,35,5,1,0,0,0,36,
+	40,5,3,0,0,37,39,3,2,1,0,38,37,1,0,0,0,39,42,1,0,0,0,40,38,1,0,0,0,40,41,
+	1,0,0,0,41,43,1,0,0,0,42,40,1,0,0,0,43,44,5,4,0,0,44,7,1,0,0,0,45,49,5,
+	5,0,0,46,48,3,2,1,0,47,46,1,0,0,0,48,51,1,0,0,0,49,47,1,0,0,0,49,50,1,0,
+	0,0,50,52,1,0,0,0,51,49,1,0,0,0,52,53,5,6,0,0,53,9,1,0,0,0,54,60,5,7,0,
+	0,55,60,5,9,0,0,56,60,5,8,0,0,57,60,5,10,0,0,58,60,5,11,0,0,59,54,1,0,0,
+	0,59,55,1,0,0,0,59,56,1,0,0,0,59,57,1,0,0,0,59,58,1,0,0,0,60,11,1,0,0,0,
+	7,15,22,25,31,40,49,59];
 
 	private static __ATN: ATN;
 	public static get _ATN(): ATN {
@@ -724,6 +736,33 @@ export class IdContext extends AtomContext {
 	public accept<Result>(visitor: tispVisitor<Result>): Result {
 		if (visitor.visitId) {
 			return visitor.visitId(this);
+		} else {
+			return visitor.visitChildren(this);
+		}
+	}
+}
+export class LabelContext extends AtomContext {
+	constructor(parser: tispParser, ctx: AtomContext) {
+		super(parser, ctx.parentCtx, ctx.invokingState);
+		super.copyFrom(ctx);
+	}
+	public LABEL(): TerminalNode {
+		return this.getToken(tispParser.LABEL, 0);
+	}
+	public enterRule(listener: tispListener): void {
+	    if(listener.enterLabel) {
+	 		listener.enterLabel(this);
+		}
+	}
+	public exitRule(listener: tispListener): void {
+	    if(listener.exitLabel) {
+	 		listener.exitLabel(this);
+		}
+	}
+	// @Override
+	public accept<Result>(visitor: tispVisitor<Result>): Result {
+		if (visitor.visitLabel) {
+			return visitor.visitLabel(this);
 		} else {
 			return visitor.visitChildren(this);
 		}

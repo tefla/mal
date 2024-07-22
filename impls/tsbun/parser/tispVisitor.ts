@@ -11,6 +11,7 @@ import { ArrayContext } from "./tispParser";
 import { MapContext } from "./tispParser";
 import { IdContext } from "./tispParser";
 import { NumberContext } from "./tispParser";
+import { LabelContext } from "./tispParser";
 import { StringContext } from "./tispParser";
 import { OpContext } from "./tispParser";
 
@@ -75,6 +76,13 @@ export default class tispVisitor<Result> extends ParseTreeVisitor<Result> {
 	 * @return the visitor result
 	 */
 	visitNumber?: (ctx: NumberContext) => Result;
+	/**
+	 * Visit a parse tree produced by the `label`
+	 * labeled alternative in `tispParser.atom`.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	visitLabel?: (ctx: LabelContext) => Result;
 	/**
 	 * Visit a parse tree produced by the `string`
 	 * labeled alternative in `tispParser.atom`.

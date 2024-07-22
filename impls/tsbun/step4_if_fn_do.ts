@@ -1,15 +1,15 @@
 import {  read_str_antlr } from "./reader.ts";
 import { pr_str_antlr } from "./printer.ts";
 import {Env} from "./env.ts";
-import { FunctionType, VectorType, type TispType, Node, ListType, isSeq, NumberType } from "./types.ts";
+import { FunctionType, VectorType, type TispType, Node, ListType, isSeq, NumberType, True, False , equals, Nil} from "./types.ts";
 import { AstNode, AtomNode } from "./AST.ts";
 import { first } from "lodash/fp";
+import { ns } from "./core.ts";
 
 const rootEnv = new Env();
-rootEnv.set("+", FunctionType.fromBootstrap((a : NumberType, b : NumberType) => new NumberType(a.value + b.value)));
-rootEnv.set("-", FunctionType.fromBootstrap((a : NumberType, b : NumberType) => new NumberType(a.value - b.value)));
-rootEnv.set("*", FunctionType.fromBootstrap((a : NumberType, b : NumberType) => new NumberType(a.value * b.value)));
-rootEnv.set("/", FunctionType.fromBootstrap((a : NumberType, b : NumberType) => new NumberType(a.value / b.value)));
+Object.entries(ns).map(([key, value]) => {
+  rootEnv.set(key, value);
+})
 
 
 const eval_ast = (ast: TispType, env: Env): TispType => {
@@ -26,6 +26,7 @@ const eval_ast = (ast: TispType, env: Env): TispType => {
       return new ListType(ast.elements.map(node => eval_mal(node, env)));
     case Node.Vector:
       return new VectorType(ast.elements.map(node => eval_mal(node, env)));
+    
     default:
       return ast;
   }
@@ -43,18 +44,42 @@ const eval_mal = (ast: TispType, env: Env): any => {
   switch(firstParam.type){
     case Node.Ident:
       switch(firstParam.value){
-        case 'def!':
+        case 'def!':{
           const [key, value] = rest;
           const evalValue = eval_mal(value, env);
           env.set(key.value, evalValue);
           return evalValue;
-        case 'let*':
+        }
+        case 'let*': {
           const [bindings, body] = rest;
           const letEnv = new Env(env);
           for(let i = 0; i < bindings.elements.length; i+=2){
             letEnv.set(bindings.elements[i].value, eval_mal(bindings.elements[i+1], letEnv));
           }
           return eval_mal(body, letEnv);
+        }
+        case 'do': {
+          return rest.map(node => eval_mal(node, env)).pop();
+        }
+        case 'if': {
+          const [condition, trueBranch, falseBranch] = rest
+          const evalCondition = eval_mal(condition, env);
+          if(!equals(evalCondition, False) && !equals(evalCondition, Nil)){
+            return eval_mal(trueBranch, env);
+          } else {
+            if(!falseBranch){
+              return Nil;
+            }
+            return eval_mal(falseBranch, env);
+          }
+        }
+        case 'fn*': {
+          const [params, body] = rest;
+          if(!isSeq(params)){
+            throw new Error(`Expected vector but got ${params}`);
+          }
+          return FunctionType.fromAst(eval_mal, env, params.elements.map(a=>a.toString()), body);
+        }
       }
   }
   // ...
@@ -95,8 +120,12 @@ const repl = async () => {
     process.stdout.write(prompt);
   }
 }
+
+rep(`
+
+(def! not (fn* [a] (if a false true)))
+
+(= [1 2 (list 3 4 [5 6])] (list 1 2 [3 4 (list 5 6)])) 
+`)
+
 repl();
-
-//console.log(rep("(let* [c 2 b 3 d (* c b)] (* d d))")) // 6
-
-
