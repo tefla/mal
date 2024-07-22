@@ -1,32 +1,36 @@
-
+import type {BaseType} from "./types.ts";
 
 export class Env {
-  data: Map<string, any> = new Map();
-  outer: Env | null = null;
+    data: Map<string, any>;
+    outer: Env | null;
 
-  constructor(outer: Env | null = null) {
-    this.outer = outer;
-  }
-
-  set(key: string, value: any) {
-    this.data.set(key, value);
-  }
-
-  find(key: string): Env | null {
-    if (this.data.has(key)) {
-      return this;
+    constructor(outer: Env | null = null, binds: string[] = [], exprs: BaseType[] = []) {
+        this.data = new Map<string, any>();
+        this.outer = outer;
+        for (let i = 0; i < binds.length; i++) {
+            this.data.set(binds[i], exprs[i]);
+        }
     }
-    if (this.outer) {
-      return this.outer.find(key);
-    }
-    return null;
-  }
 
-  get(key: string): any {
-    const env = this.find(key);
-    if (env) {
-      return env.data.get(key);
+    set(key: string, value: any) {
+        this.data.set(key, value);
     }
-    return null;
-  }
+
+    find(key: string): any {
+        if (this.data.has(key)) {
+        return this;
+        }
+        if (this.outer) {
+        return this.outer.find(key);
+        }
+        return null;
+    }
+
+    get(key: string): any {
+        const env = this.find(key);
+        if (env) {
+        return env.data.get(key);
+        }
+        return null;
+    }
 }

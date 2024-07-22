@@ -19,10 +19,16 @@ map
 atom
   : ID        #id
   | NUMBER    #number
+  | LABEL     #label
   | STRING    #string
   | OP        #op
   ;
-ID: ':'? [_a-zA-Z]+ [a-zA-Z0-9-_!]*;
+
+string
+  :
+
+ID: [_a-zA-Z]+ [a-zA-Z0-9-_!*?]*;
+LABEL: ':' ID;
 NUMBER
   : '-'? ([0-9]* '.')? [0-9]+
   ;

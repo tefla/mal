@@ -16,7 +16,7 @@ const repl = async () => {
     try{
       process.stdout.write(rep(line));
       process.stdout.write("\n");
-    } catch(e) {
+    } catch(e: any) {
       const err: Error = e;
       process.stdout.write(err.message);
     }
