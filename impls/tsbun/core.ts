@@ -1,6 +1,7 @@
 import { pr_str_antlr } from "./printer";
-import { FunctionType, NumberType, True, False, Nil, ListType, Node, equals, isSeq, StringType, type TispType, VectorType } from "./types";
-
+import { readStr } from "./reader";
+import { FunctionType, NumberType, True, False, Nil, ListType, Node, equals, isSeq, StringType, type TispType, VectorType, AtomType } from "./types";
+import {readFileSync} from "node:fs"
 export const ns = {
     '+': FunctionType.fromBootstrap((a: NumberType, b: NumberType) => new NumberType(a.value + b.value)),
     '-': FunctionType.fromBootstrap((a: NumberType, b: NumberType) => new NumberType(a.value - b.value)),
@@ -54,4 +55,78 @@ export const ns = {
         console.log(...args.map(arg => pr_str_antlr(arg, false)));
         return Nil;
     }),
+
+    'read-string': FunctionType.fromBootstrap((str: StringType) => {
+        return readStr(str.value);
+    }),
+    'slurp': FunctionType.fromBootstrap((str: StringType) => {
+        return new StringType(readFileSync(str.value, 'utf-8'));
+    }),
+    'atom': FunctionType.fromBootstrap((node: TispType) => {
+        return new AtomType(node);
+    }),
+    'atom?': FunctionType.fromBootstrap((node: TispType) => {
+        return node.type === Node.Atom ? True : False;
+    }),
+    'deref': FunctionType.fromBootstrap((node: AtomType) => {
+        if(node.type !== Node.Atom){
+            throw new Error(`Expected atom but got ${node}`);
+        }
+        return node.value;
+    }),
+    'reset!': FunctionType.fromBootstrap((node: AtomType, value: TispType) => {
+        if(node.type !== Node.Atom){
+            throw new Error(`Expected atom but got ${node}`);
+        }
+        node.value = value;
+        return value;
+    }),
+    'swap!': FunctionType.fromBootstrap((node: AtomType, func: FunctionType, ...args: TispType[]) => {
+        if(node.type !== Node.Atom){
+            throw new Error(`Expected atom but got ${node}`);
+        }
+        if(func.func === undefined){
+            throw new Error(`Expected function but got ${func}`);
+        }
+        node.value = func.func(node.value, ...args);
+        return node.value;
+    }),
+    'cons': FunctionType.fromBootstrap((node: TispType, list: ListType) => {
+        if(!isSeq(list)){
+            throw new Error(`Expected list but got ${list}`);
+        }
+        return new ListType([node, ...list.elements]);
+    }),
+    'concat': FunctionType.fromBootstrap((...lists: ListType[]) => {
+        return new ListType(lists.reduce((acc, list) => acc.concat(list.elements), []));
+    }),
+    'vec': FunctionType.fromBootstrap((list: TispType) => {
+        if(list.type === Node.Vector){
+            return list;
+        }
+        if(!isSeq(list)){
+            throw new Error(`Expected list but got ${list}`);
+        }
+        return new VectorType(list.elements);
+    }),
+    'nth': FunctionType.fromBootstrap((list: ListType, index: NumberType) => {
+        if(!isSeq(list)){
+            throw new Error(`Expected list but got ${list}`);
+        }
+        return list.elements[index.value];
+    }),
+    'first': FunctionType.fromBootstrap((list: ListType) => {
+        if(!isSeq(list) || list.elements.length === 0){
+            return Nil;
+        }
+        return list.elements[0];
+    }),
+    'rest': FunctionType.fromBootstrap((list: ListType) => {
+        if(!isSeq(list) || list.elements.length === 0){
+            return new ListType([]);
+        }
+        
+        return new ListType(list.elements.slice(1));
+    }),
+
 }

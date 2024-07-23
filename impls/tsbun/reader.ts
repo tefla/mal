@@ -13,73 +13,153 @@ import tispParser, {
   TispContext
 } from "./parser/tispParser.ts";
 import tispVisitor from "./parser/tispVisitor.ts";
-import { VectorType, IdentType, ListType, NumberType, type TispType, TispProgramType, StringType, AtomType } from "./types.ts";
+import { VectorType, ListType, NumberType, type TispType, TispProgramType, StringType, KeywordType, Nil, True, False, SymbolType, HashMapType } from "./types.ts";
 import { last } from "lodash/fp";
 
 
-export const read_str_antlr = (input: string) => {
-  const chars = antlr4.CharStreams.fromString(input);
-  const lexer: Lexer = new tispLexer(chars);
-  const tokens = new antlr4.CommonTokenStream(lexer)
-  const parser = new tispParser(tokens);
-  const tree = parser.tisp();
-  const ast = new AstVisitor();
-  const node = ast.visit(tree);
-  return node;
+
+
+class Reader {
+  position = 0;
+
+  constructor(private tokens: string[]) { }
+
+  next(): string {
+      const ret = this.peek();
+      this.position += 1;
+      return ret;
+  }
+
+  peek(): string {
+      return this.tokens[this.position];
+  }
 }
 
-export class AstVisitor extends tispVisitor<TispType> {
-  [x: string]: any;
+export function readStr(input: string): TispType {
+  const tokens = tokenizer(input);
+  const reader = new Reader(tokens);
+  return readForm(reader);
+}
 
-  visitTisp = (ctx: TispContext): TispType => {
-    return new TispProgramType(ctx.s_expr_list().map(exp => this.visit(exp)));
-  }
-
-  visitList = (ctx: ListContext): ListType => {
-    return new ListType(ctx.s_expr_list().map(child => {
-      return this.visit(child)
-    }))
-  }
-  visitArray = (ctx: ArrayContext): VectorType => {
-    return new VectorType(ctx.s_expr_list().map(child => {
-      return this.visit(child)
-    }))
-  }
-  visitMap = (ctx: MapContext): TispType => {
-    //return new MapType(ctx.s_expr_list().map(child => this.visit(child)))
-    throw new Error("Not implemented")
-  }
-  visitSexpAtom = (ctx: SexpAtomContext): TispType => {
-
-    return this.visit(ctx.atom());
-
-  }
-  visitSexpList = (ctx: SexpListContext): TispType => {
-    const list = ctx.list() || ctx.array() || ctx.map();
-    return this.visit(list);
-  }
-  visitId = (ctx: IdContext): IdentType => {
-    return new IdentType(ctx.getText());
-  }
-  visitString = (ctx: StringContext): TispType => {
-    const str = ctx.getText().slice(1, -1).replace(/\\(.)/g, (_, c: string) => c == 'n' ? '\n' : c);
-
-    return new StringType(str);
-
-  }
-  visitNumber = (ctx: NumberContext): NumberType => {
-    const numStr = ctx.getText();
-    if (numStr.includes(".")) {
-      return new NumberType(parseFloat(numStr));
-    } else {
-      return new NumberType(parseInt(numStr));
-    }
-  }
-  visitOp = (ctx: OpContext): IdentType => {
-    return new IdentType(ctx.getText());
-  }
-  visitLabel = (ctx: LabelContext): TispType => {
-    return new AtomType(ctx.getText());
+function tokenizer(input: string): string[] {
+  const regexp = /[\s,]*(~@|[\[\]{}()'`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"`,;)]*)/g;
+  const tokens: string[] = [];
+  while (true) {
+      const matches = regexp.exec(input);
+      if (!matches) {
+          break;
+      }
+      const match = matches[1];
+      if (match === "") {
+          break;
+      }
+      if (match[0] !== ";") {
+          tokens.push(match);
+      }
   }
 
+  return tokens;
+}
+
+function readForm(reader: Reader): TispType {
+  const token = reader.peek();
+  switch (token) {
+      case "(":
+          return readList(reader);
+      case "[":
+          return readVector(reader);
+      case "{":
+          return readHashMap(reader);
+      case "'":
+          return readSymbol("quote");
+      case "`":
+          return readSymbol("quasiquote");
+      case "~":
+          return readSymbol("unquote");
+      case "~@":
+          return readSymbol("splice-unquote");
+      case "@":
+          return readSymbol("deref");
+      // case "^":
+      //     {
+      //         reader.next();
+      //         const sym = MalSymbol.get("with-meta");
+      //         const target = readForm(reader);
+      //         return new MalList([sym, readForm(reader), target]);
+      //     }
+      default:
+          return readAtom(reader);
+  }
+
+  function readSymbol(name: string) {
+      reader.next();
+      const sym = SymbolType.get(name);
+      const target = readForm(reader);
+      return new ListType([sym, target]);
+  }
+}
+
+function readList(reader: Reader): TispType {
+  return readParen(reader, ListType, "(", ")");
+}
+
+function readVector(reader: Reader): TispType {
+  return readParen(reader, VectorType, "[", "]");
+}
+
+function readHashMap(reader: Reader): TispType {
+  return readParen(reader, HashMapType, "{", "}");
+}
+
+function readParen(reader: Reader, ctor: { new (list: TispType[]): TispType; }, open: string, close: string): TispType {
+  const token = reader.next(); // drop open paren
+  if (token !== open) {
+      throw new Error(`unexpected token ${token}, expected ${open}`);
+  }
+  const list: TispType[] = [];
+  while (true) {
+      const next = reader.peek();
+      if (next === close) {
+          break;
+      } else if (!next) {
+          throw new Error("unexpected EOF");
+      }
+      list.push(readForm(reader));
+  }
+  reader.next(); // drop close paren
+
+  return new ctor(list);
+}
+
+function readAtom(reader: Reader): TispType {
+  const token = reader.next();
+  if (token.match(/^-?[0-9]+$/)) {
+      const v = parseInt(token, 10);
+      return new NumberType(v);
+  }
+  if (token.match(/^-?[0-9]\.[0-9]+$/)) {
+      const v = parseFloat(token);
+      return new NumberType(v);
+  }
+  if (token.match(/^"(?:\\.|[^\\"])*"$/)) {
+      const v = token.slice(1, token.length - 1)
+          .replace(/\\(.)/g, (_, c: string) => c == 'n' ? '\n' : c)
+      return new StringType(v);
+  }
+  if (token[0] === '"') {
+      throw new Error("expected '\"', got EOF");
+  }
+  if (token[0] === ":") {
+      return KeywordType.get(token.substring(1));
+  }
+  switch (token) {
+      case "nil":
+          return Nil;
+      case "true":
+          return True;
+      case "false":
+          return False;
+  }
+
+  return SymbolType.get(token);
 }

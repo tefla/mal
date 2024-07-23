@@ -9,12 +9,16 @@
     "typescript": "^5.0.0"
   },
   "scripts": {
-    "test": "npm run test:step0 && npm run test:step1 && npm run test:step2 && npm run test:step3 && npm run test:step4",
+    "test": "npm run test:step0 && npm run test:step1 && npm run test:step2 && npm run test:step3 && npm run test:step4 && npm run test:step5 && npm run test:step6 && npm run test:step7 && npm run test:step8",
     "test:step0": "cd ../.. && make 'test^tsbun^step0'",
     "test:step1": "cd ../.. && make 'test^tsbun^step1'",
     "test:step2": "cd ../.. && make 'test^tsbun^step2'",
     "test:step3": "cd ../.. && make 'test^tsbun^step3'",
-    "test:step4": "cd ../.. && make 'test^tsbun^step4'"
+    "test:step4": "cd ../.. && make 'test^tsbun^step4'",
+    "test:step5": "cd ../.. && make 'test^tsbun^step5'",
+    "test:step6": "cd ../.. && make 'test^tsbun^step6'",
+    "test:step7": "cd ../.. && make 'test^tsbun^step7'",
+    "test:step8": "cd ../.. && make 'test^tsbun^step8'"
   },
   "dependencies": {
     "@types/antlr4": "^4.11.6",

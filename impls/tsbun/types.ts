@@ -4,20 +4,16 @@ import { Env } from "./env";
 export type TispType = 
   NumberType 
   | ListType 
-  | IdentType 
   | VectorType 
   | FunctionType 
   | TispProgramType 
   | BooleanType 
   | NilType 
   | StringType
-  | AtomType;
-
-// Equality
-
-export function isSeq(ast: TispType): ast is ListType | VectorType {
-  return ast.type === Node.List || ast.type === Node.Vector;
-}
+  | KeywordType
+  | AtomType
+  | SymbolType
+  | HashMapType;
 
 export const enum Node {
   Number  = "Number",
@@ -29,16 +25,115 @@ export const enum Node {
   Boolean = "Boolean",
   Nil = "Nil",
   String = "String",
+  Keyword = "Keyword",
   Atom = "Atom",
+  Symbol = "Symbol",
+  HashMap = "HashMap",
 }
+export class HashMapType {
+  type: Node.HashMap = Node.HashMap;
+  stringMap: { [key: string]: TispType } = {};
+  keywordMap = new Map<TispType, TispType>();
 
-// AtomType
-export class AtomType {
-  type: Node.Atom = Node.Atom;
-  constructor(public value: string) {
+  constructor(list: TispType[]) {
+      while (list.length !== 0) {
+          const key = list.shift()!;
+          const value = list.shift();
+          if (value == null) {
+              throw new Error("unexpected hash length");
+          }
+          if (key.type === Node.Keyword) {
+              this.keywordMap.set(key, value);
+          } else if (key.type === Node.String) {
+              this.stringMap[key.value] = value;
+          } else {
+              throw new Error(`unexpected key symbol: ${key.type}, expected: keyword or string`);
+          }
+      }
+  }
+
+  has(key: KeywordType | StringType) {
+      if (key.type === Node.Keyword) {
+          return !!this.keywordMap.get(key);
+      }
+      return !!this.stringMap[key.value];
+  }
+
+  get(key: KeywordType | StringType) {
+      if (key.type === Node.Keyword) {
+          return this.keywordMap.get(key) || Nil;
+      }
+      return this.stringMap[key.value] || Nil;
+  }
+
+  entries(): [TispType, TispType][] {
+      const list: [TispType, TispType][] = [];
+
+      this.keywordMap.forEach((v, k) => {
+          list.push([k, v]);
+      });
+      Object.keys(this.stringMap).forEach(v => list.push([new StringType(v), this.stringMap[v]]));
+
+      return list;
+  }
+
+  keys(): TispType[] {
+      const list: TispType[] = [];
+      this.keywordMap.forEach((_v, k) => {
+          list.push(k);
+      });
+      Object.keys(this.stringMap).forEach(v => list.push(new StringType(v)));
+      return list;
+  }
+
+  vals(): TispType[] {
+      const list: TispType[] = [];
+      this.keywordMap.forEach(v => {
+          list.push(v);
+      });
+      Object.keys(this.stringMap).forEach(v => list.push(this.stringMap[v]));
+      return list;
+  }
+
+  assoc(args: TispType[]): HashMapType {
+      const list: TispType[] = [];
+      this.keywordMap.forEach((value, key) => {
+          list.push(key);
+          list.push(value);
+      });
+      Object.keys(this.stringMap).forEach(keyStr => {
+          list.push(new StringType(keyStr));
+          list.push(this.stringMap[keyStr]);
+      });
+
+      return new HashMapType(list.concat(args));
+  }
+
+  dissoc(args: TispType[]): HashMapType {
+      const newHashMap = this.assoc([]);
+
+      args.forEach(arg => {
+          if (arg.type === Node.String) {
+              delete newHashMap.stringMap[arg.value];
+          } else if (arg.type === Node.Keyword) {
+              newHashMap.keywordMap.delete(arg);
+          } else {
+              throw new Error(`unexpected symbol: ${arg.type}, expected: keyword or string`);
+          }
+      });
+      return newHashMap;
   }
   toString(): string {
-    return this.value;
+    return `{${this.entries().map(([k, v]) => `${k.toString()} ${v.toString()}`).join(", ")}}`;
+  }
+}
+
+export class AtomType {
+  type: Node.Atom = Node.Atom;
+  constructor(public value: TispType) {
+  }
+  toString(): string {
+    return `(atom ${this.value.toString()})`;
   }
 }
 // StringType
@@ -69,30 +164,39 @@ export class VectorType  {
   }
 }
 
+type TispF = (...args: (TispType | undefined)[]) => TispType;
+
 
 // FunctionType
 export class FunctionType  {
-  type: Node.Function = Node.Function;
-  public  func: (...args: TispType[]) => TispType ;
 
-  static fromBootstrap = (func: (...args: TispType[]) => TispType) => {
-    const f = new FunctionType({}, [], Nil);
+  static fromBootstrap = (func: TispF) => {
+    const f = new FunctionType();
     f.func = func;
     return f;
   }
   
   static fromAst = (eval_mal: (ast: TispType, env: Env) => TispType , env: Env, params: string[], body: TispType) => {
-    const f = new FunctionType(env, params, body);
-    f.func = (...args: TispType[]) => {
+    const f = new FunctionType();
+    f.env = env;
+    f.params = params;
+    f.body = body;
+    f.func = (...args) => {
       const newEnv = new Env(env, params, args);
       return eval_mal(body, newEnv);
     }
     return f;
   }
-  private constructor(public env: Env, public params: string[], public body?: TispType) {
-    this.func = (...args: TispType[]) => {
-     throw new Error("Not implemented");
-    }
+  type: Node.Function = Node.Function;
+  env?: Env;
+  params?: string[];
+  body?: TispType;
+  
+  is_macro = false;
+  func?: TispF ;
+
+  private constructor() {
+    
   }
   toString(): string {
     return "#<function>";
@@ -112,15 +216,6 @@ export class ListType  {
     return `(${this.elements.map(node => node.toString()).join(" ")})`;
   }
 }
-// IdentType
-export class IdentType  {
-  type: Node.Ident = Node.Ident;
-  constructor(public value: string) {
-  }
-  toString(): string {
-    return this.value;
-  }
-}
 
 // NumberType
 export class NumberType  {
@@ -130,6 +225,50 @@ export class NumberType  {
   }
   toString(): string {
     return this.value.toString();
+  }
+}
+
+export class SymbolType {
+  type: Node.Symbol = Node.Symbol;
+  static map = new Map<symbol, SymbolType>();
+
+  static get(name: string): TispType {
+    const sym = Symbol.for(name);
+    let token = this.map.get(sym);
+    if (token) {
+        return token;
+    }
+    token = new SymbolType(name);
+    this.map.set(sym, token);
+    return token;
+  }
+  private constructor(public value: string) {}
+
+  toString(): string {
+    return this.value;
+  }
+} 
+
+// KeywordType
+export class KeywordType {
+  type: Node.Keyword = Node.Keyword;
+  constructor(public value: string) {
+  }
+  static map = new Map<symbol, KeywordType>();
+
+  static get(name: string): KeywordType {
+      const sym = Symbol.for(name);
+      let token = this.map.get(sym);
+      if (token) {
+          return token;
+      }
+      token = new KeywordType(name);
+      this.map.set(sym, token);
+      return token;
+  }
+
+  toString(): string {
+    return this.value;
   }
 }
 
@@ -149,6 +288,7 @@ class NilType {
     return "nil";
   }
 }
+
 export const True = new BooleanType(true);
 export const False = new BooleanType(false);
 export const Nil = new NilType();
@@ -160,8 +300,8 @@ export function equals(a: TispType, b: TispType): boolean {
   switch (a.type) {
     case Node.Number:
       return a.value === (b as NumberType).value;
-    case Node.Ident:
-      return a.value === (b as IdentType).value;
+    case Node.Symbol:
+      return a.value === (b as SymbolType).value;
     case Node.Boolean:
       return a.value === (b as BooleanType).value;
     case Node.Nil:
@@ -172,8 +312,8 @@ export function equals(a: TispType, b: TispType): boolean {
       return equalsArray(a.elements, (b as VectorType).elements);
     case Node.String:
       return a.value === (b as StringType).value;
-    case Node.Atom:
-      return a.value === (b as AtomType).value;
+    case Node.Keyword:
+      return a.value === (b as KeywordType).value;
   }
   }
   return false;
@@ -203,3 +343,10 @@ export function equalsMap(a: Map<string, TispType>, b: Map<string, TispType>): b
   }
   return true;
 }
+
+// Equality
+
+export function isSeq(ast: TispType): ast is ListType | VectorType {
+  return ast.type === Node.List || ast.type === Node.Vector;
+}
+

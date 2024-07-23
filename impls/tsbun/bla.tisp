@@ -1,0 +1,19 @@
+
+(println (str (+ 1 1)))
+
+(println (count *ARGV* ))
+
+(def! lst 
+    (quote (b c)))
+(println (quasiquote (a (splice-unquote lst) d)))
+
+(def! x '(1 2 3))
+
+(println `(a ~@x c))
+
+(def! test1 `(a ~@x c))
+(def! test2 (quasiquote (a (splice-unquote x) c)))
+
+(println (= test1 test2))
+
+ (let* [x (cond false "no" true "yes")] x)
