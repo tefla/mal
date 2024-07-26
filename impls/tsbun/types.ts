@@ -187,6 +187,7 @@ export class FunctionType  {
     }
     return f;
   }
+
   type: Node.Function = Node.Function;
   env?: Env;
   params?: string[];
@@ -203,6 +204,15 @@ export class FunctionType  {
   }
   newEnv(args: TispType[]) {
     return new Env(this.env, this.params, args);
+  }
+  toMacro = () => {
+    const f = new FunctionType();
+    f.env = this.env;
+    f.params = this.params;
+    f.body = this.body;
+    f.func = this.func;
+    f.is_macro = true;
+    return f;
   }
 
 }

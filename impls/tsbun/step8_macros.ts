@@ -1,7 +1,7 @@
 import { readStr } from "./reader.ts";
 import { pr_str_antlr } from "./printer.ts";
 import { Env } from "./env.ts";
-import { FunctionType, VectorType, type TispType, Node, ListType, isSeq, NumberType, True, False, equals, Nil, StringType, SymbolType } from "./types.ts";
+import { FunctionType, VectorType, type TispType, Node, ListType, isSeq, NumberType, True, False, equals, Nil, StringType, SymbolType, HashMapType } from "./types.ts";
 import { AstNode, AtomNode } from "./AST.ts";
 import { first } from "lodash/fp";
 import { ns } from "./core.ts";
@@ -88,8 +88,6 @@ function quasiquote(ast: TispType): TispType {
 
 const eval_ast = (ast: TispType, env: Env): TispType => {
   switch (ast.type) {
-    case Node.Program:
-      return ast.elements.map(node => eval_mal(node, env)).pop();
     case Node.Symbol:
       const value = env.get(ast.value);
       if (!value) {
@@ -100,13 +98,19 @@ const eval_ast = (ast: TispType, env: Env): TispType => {
       return new ListType(ast.elements.map(node => eval_mal(node, env)));
     case Node.Vector:
       return new VectorType(ast.elements.map(node => eval_mal(node, env)));
-    default:
+    case Node.HashMap:
+        const list: TispType[] = [];
+        for (const [key, value] of ast.entries()) {
+            list.push(key);
+            list.push(eval_mal(value, env));
+        }
+        return new HashMapType(list);
+default:
       return ast;
   }
 }
 
 const eval_mal = (ast: TispType, env: Env): any => {
-  try {
     loop:
     while (true) {
       if (ast.type !== Node.List) {
@@ -134,6 +138,9 @@ const eval_mal = (ast: TispType, env: Env): any => {
               if (key.type !== Node.Symbol) {
                 throw new Error(`Expected ident but got ${key}`);
               }
+              if(!value){
+                throw new Error(`Expected value but got ${value}`);
+              }
               const evalValue = eval_mal(value, env);
               env.set(key.value, evalValue);
               return evalValue;
@@ -150,7 +157,7 @@ const eval_mal = (ast: TispType, env: Env): any => {
                 }
                 env.set(bindings.elements[i].value, eval_mal(bindings.elements[i + 1], env));
               }
-              ast = eval_mal(body, env);
+              ast = body;
               continue loop;
             }
             case 'do': {
@@ -187,7 +194,7 @@ const eval_mal = (ast: TispType, env: Env): any => {
               if (rest.length !== 1) {
                 throw new Error(`quote expects 1 argument, got ${rest.length}`);
               }
-              return first(rest);
+              return rest[0];
             }
             case 'quasiquote': {
               if (rest.length !== 1) {
@@ -205,8 +212,8 @@ const eval_mal = (ast: TispType, env: Env): any => {
                 throw new Error(`Expected ident but got ${key}`);
               }
               const evalValue = eval_mal(value, env);
-              evalValue.is_macro = true;
-              env.set(key.value, evalValue);
+
+              env.set(key.value, evalValue.toMacro());
               return evalValue;
             }
             case 'macroexpand': {
@@ -233,9 +240,7 @@ const eval_mal = (ast: TispType, env: Env): any => {
       }
       return fn.func(...args);
     }
-  } catch (e) {
-    return Nil
-  }
+  
 }
 const READ = (str: string): any => readStr(str);
 const EVAL = (ast: any, _env?: any): any => eval_mal(ast, _env);
@@ -281,6 +286,7 @@ rep('(def! not (fn* (a) (if a false true)))')
 // load-file
 rep(`(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))`)
 rep(`(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw "odd number of forms to cond")) (cons 'cond (rest (rest xs)))))))`)
+rep(`(defmacro! id (fn* (x) x))`)
 const { positionals } = parseArgs({
   args: Bun.argv,
   allowPositionals: true,

@@ -16,4 +16,11 @@
 
 (println (= test1 test2))
 
- (let* [x (cond false "no" true "yes")] x)
+(let* [x (cond false "no" true "yes")] x)
+
+
+(defmacro! id (fn* (x) x))
+(println (let* (a 123) (macroexpand (id a))))
+;=>a
+(println(let* (a 123) (id a)))
+;=>123

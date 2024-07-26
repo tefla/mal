@@ -113,6 +113,9 @@ export const ns = {
         if(!isSeq(list)){
             throw new Error(`Expected list but got ${list}`);
         }
+        if(index.value < 0 || index.value >= list.elements.length){
+            throw new Error(`Index out of bounds`);
+        }
         return list.elements[index.value];
     }),
     'first': FunctionType.fromBootstrap((list: ListType) => {
