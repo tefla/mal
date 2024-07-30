@@ -2,7 +2,7 @@ import { keys } from "lodash";
 import { pr_str_antlr } from "./printer";
 import { readStr } from "./reader";
 import { FunctionType, NumberType, True, False, Nil, ListType, Node, equals, isSeq, StringType, type TispType, VectorType, AtomType, TispError, KeywordType, HashMapType, SymbolType } from "./types";
-import {readFileSync} from "node:fs"
+import { readFileSync } from "node:fs"
 export const ns = {
     '+': FunctionType.fromBootstrap((a: NumberType, b: NumberType) => new NumberType(a.value + b.value)),
     '-': FunctionType.fromBootstrap((a: NumberType, b: NumberType) => new NumberType(a.value - b.value)),
@@ -70,30 +70,30 @@ export const ns = {
         return node.type === Node.Atom ? True : False;
     }),
     'deref': FunctionType.fromBootstrap((node: AtomType) => {
-        if(node.type !== Node.Atom){
+        if (node.type !== Node.Atom) {
             throw new Error(`Expected atom but got ${node}`);
         }
         return node.value;
     }),
     'reset!': FunctionType.fromBootstrap((node: AtomType, value: TispType) => {
-        if(node.type !== Node.Atom){
+        if (node.type !== Node.Atom) {
             throw new Error(`Expected atom but got ${node}`);
         }
         node.value = value;
         return value;
     }),
     'swap!': FunctionType.fromBootstrap((node: AtomType, func: FunctionType, ...args: TispType[]) => {
-        if(node.type !== Node.Atom){
+        if (node.type !== Node.Atom) {
             throw new Error(`Expected atom but got ${node}`);
         }
-        if(func.func === undefined){
+        if (func.func === undefined) {
             throw new Error(`Expected function but got ${func}`);
         }
         node.value = func.func(node.value, ...args);
         return node.value;
     }),
     'cons': FunctionType.fromBootstrap((node: TispType, list: ListType) => {
-        if(!isSeq(list)){
+        if (!isSeq(list)) {
             throw new Error(`Expected list but got ${list}`);
         }
         return new ListType([node, ...list.elements]);
@@ -102,34 +102,34 @@ export const ns = {
         return new ListType(lists.reduce((acc, list) => acc.concat(list.elements), []));
     }),
     'vec': FunctionType.fromBootstrap((list: TispType) => {
-        if(list.type === Node.Vector){
+        if (list.type === Node.Vector) {
             return list;
         }
-        if(!isSeq(list)){
+        if (!isSeq(list)) {
             throw new Error(`Expected list but got ${list}`);
         }
         return new VectorType(list.elements);
     }),
     'nth': FunctionType.fromBootstrap((list: ListType, index: NumberType) => {
-        if(!isSeq(list)){
+        if (!isSeq(list)) {
             throw new Error(`Expected list but got ${list}`);
         }
-        if(index.value < 0 || index.value >= list.elements.length){
+        if (index.value < 0 || index.value >= list.elements.length) {
             throw new Error(`Index out of bounds`);
         }
         return list.elements[index.value];
     }),
     'first': FunctionType.fromBootstrap((list: ListType) => {
-        if(!isSeq(list) || list.elements.length === 0){
+        if (!isSeq(list) || list.elements.length === 0) {
             return Nil;
         }
         return list.elements[0];
     }),
     'rest': FunctionType.fromBootstrap((list: ListType) => {
-        if(!isSeq(list) || list.elements.length === 0){
+        if (!isSeq(list) || list.elements.length === 0) {
             return new ListType([]);
         }
-        
+
         return new ListType(list.elements.slice(1));
     }),
     'throw': FunctionType.fromBootstrap((v: TispType) => {
@@ -137,14 +137,14 @@ export const ns = {
     }),
     'apply': FunctionType.fromBootstrap((func: FunctionType, ...args: TispType[]) => {
         const [last] = args.slice(-1);
-        if(!isSeq(last)){
+        if (!isSeq(last)) {
             throw new Error(`Expected list but got ${last}`);
         }
         const argsList = args.slice(0, -1).concat(last.elements);
         return func.func(...argsList);
     }),
     'map': FunctionType.fromBootstrap((func: FunctionType, list: ListType) => {
-        if(!isSeq(list)){
+        if (!isSeq(list)) {
             throw new Error(`Expected list but got ${list}`);
         }
         return new ListType(list.elements.map((node) => func.func(node)));
@@ -171,8 +171,8 @@ export const ns = {
         return new KeywordType(str.value);
     }),
     keys: FunctionType.fromBootstrap((node: TispType) => {
-        if(node.type === Node.HashMap){
-            return new ListType( node.keys());
+        if (node.type === Node.HashMap) {
+            return new ListType(node.keys());
         }
         throw new Error(`Expected hashmap but got ${node}`);
     }),

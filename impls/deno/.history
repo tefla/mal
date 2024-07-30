@@ -1559,3 +1559,17 @@ ___
 nil
 (nil? 1)
 (nil? nil)
+sum
+map
+reduce
+fold
+(atom 1)
+(1)
+[1]
+(map [1 2 3] (fn
+(def! add2 (fn* [a] (+ a 2)))
+(map [ 1 2 3] add2)
+(map [] [1 2] add2)
+add2
+(add2 2)
+(map add2 [1 2 3])
