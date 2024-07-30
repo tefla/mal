@@ -1,6 +1,7 @@
+import { keys } from "lodash";
 import { pr_str_antlr } from "./printer";
 import { readStr } from "./reader";
-import { FunctionType, NumberType, True, False, Nil, ListType, Node, equals, isSeq, StringType, type TispType, VectorType, AtomType } from "./types";
+import { FunctionType, NumberType, True, False, Nil, ListType, Node, equals, isSeq, StringType, type TispType, VectorType, AtomType, TispError, KeywordType, HashMapType, SymbolType } from "./types";
 import {readFileSync} from "node:fs"
 export const ns = {
     '+': FunctionType.fromBootstrap((a: NumberType, b: NumberType) => new NumberType(a.value + b.value)),
@@ -131,5 +132,69 @@ export const ns = {
         
         return new ListType(list.elements.slice(1));
     }),
-
+    'throw': FunctionType.fromBootstrap((v: TispType) => {
+        throw v;
+    }),
+    'apply': FunctionType.fromBootstrap((func: FunctionType, ...args: TispType[]) => {
+        const [last] = args.slice(-1);
+        if(!isSeq(last)){
+            throw new Error(`Expected list but got ${last}`);
+        }
+        const argsList = args.slice(0, -1).concat(last.elements);
+        return func.func(...argsList);
+    }),
+    'map': FunctionType.fromBootstrap((func: FunctionType, list: ListType) => {
+        if(!isSeq(list)){
+            throw new Error(`Expected list but got ${list}`);
+        }
+        return new ListType(list.elements.map((node) => func.func(node)));
+    }),
+    'map?': FunctionType.fromBootstrap((node: TispType) => {
+        return node.type === Node.HashMap ? True : False;
+    }),
+    'nil?': FunctionType.fromBootstrap((node: TispType) => {
+        return node === Nil ? True : False;
+    }),
+    'true?': FunctionType.fromBootstrap((node: TispType) => {
+        return node === True ? True : False;
+    }),
+    'false?': FunctionType.fromBootstrap((node: TispType) => {
+        return node === False ? True : False;
+    }),
+    'symbol?': FunctionType.fromBootstrap((node: TispType) => {
+        return node.type === Node.Symbol ? True : False;
+    }),
+    'keyword?': FunctionType.fromBootstrap((node: TispType) => {
+        return node.type === Node.Keyword ? True : False;
+    }),
+    'keyword': FunctionType.fromBootstrap((str: StringType) => {
+        return new KeywordType(str.value);
+    }),
+    keys: FunctionType.fromBootstrap((node: TispType) => {
+        if(node.type === Node.HashMap){
+            return new ListType( node.keys());
+        }
+        throw new Error(`Expected hashmap but got ${node}`);
+    }),
+    'hash-map': FunctionType.fromBootstrap((...args: TispType[]) => {
+        return new HashMapType(args);
+    }),
+    'get': FunctionType.fromBootstrap((node: HashMapType, key: TispType) => {
+        return node.get(key);
+    }),
+    'assoc': FunctionType.fromBootstrap((node: HashMapType, ...args) => {
+        return node.assoc(args);
+    }),
+    'dissoc': FunctionType.fromBootstrap((node: HashMapType, ...args) => {
+        return node.dissoc(args);
+    }),
+    'contains?': FunctionType.fromBootstrap((node: HashMapType, key: TispType) => {
+        return node.has(key) ? True : False;
+    }),
+    'vals': FunctionType.fromBootstrap((node: HashMapType) => {
+        return new ListType(node.vals());
+    }),
+    'symbol': FunctionType.fromBootstrap((str: StringType) => {
+        return SymbolType.get(str.value);
+    })
 }

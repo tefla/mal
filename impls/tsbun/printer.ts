@@ -1,28 +1,46 @@
 import { AstVisitor } from "./reader.ts";
 import { Node, type TispType } from "./types.ts";
 
-
-export const pr_str_antlr = (node: TispType, print_readably = true) => {
-  switch (node.type) {
+export const prStr = (v: TispType, printReadably = true): string => {
+  switch (v.type) {
     case Node.List:
-      return `(${node.elements.map(n => pr_str_antlr(n, print_readably)).join(" ")})`;
+        return `(${v.elements.map(v => prStr(v, printReadably)).join(" ")})`;
     case Node.Vector:
-      return `[${node.elements.map(n => pr_str_antlr(n, print_readably)).join(" ")}]`;
+        return `[${v.elements.map(v => prStr(v, printReadably)).join(" ")}]`;
+    case Node.HashMap:
+        let result = "{";
+        for (const [key, value] of v.entries()) {
+            if (result !== "{") {
+                result += " ";
+            }
+            result += `${prStr(key, printReadably)} ${prStr(value, printReadably)}`;
+        }
+        result += "}";
+        return result;
+    case Node.Number:
+    case Node.Symbol:
+    case Node.Boolean:
+        return `${v.value}`;
     case Node.String:
-      if (print_readably) {
-        const escaped = node.value
-          .replace(/\\/g, '\\\\')
-          .replace(/"/g, '\\\"')
-          .replace(/\n/g, '\\n')
-        //.replace(/\(/g, "\\(")
-        //.replace(/\)/g, "\\)")
-        return `"${escaped}"`;
-      } else {
-        return node.value;
-      }
+        if (printReadably) {
+            const str = v.value
+                .replace(/\\/g, "\\\\")
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, "\\n");
+            return `"${str}"`;
+        } else {
+            return v.value;
+        }
     case Node.Nil:
-      return "nil";
+        return "nil";
+    case Node.Keyword:
+        return `:${v.value}`;
+    case Node.Function:
+        return "#<function>";
+    case Node.Atom:
+        return `(atom ${prStr(v.value, printReadably)})`;
+    default:
+        return `Unknown type ${v}`;
   }
-
-  return node.toString()
 }
+export const pr_str_antlr = prStr;

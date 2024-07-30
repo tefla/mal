@@ -13,7 +13,8 @@ export type TispType =
   | KeywordType
   | AtomType
   | SymbolType
-  | HashMapType;
+  | HashMapType
+  | TispError;
 
 export const enum Node {
   Number  = "Number",
@@ -29,6 +30,7 @@ export const enum Node {
   Atom = "Atom",
   Symbol = "Symbol",
   HashMap = "HashMap",
+  Error = "Error"
 }
 export class HashMapType {
   type: Node.HashMap = Node.HashMap;
@@ -51,6 +53,7 @@ export class HashMapType {
           }
       }
   }
+
 
   has(key: KeywordType | StringType) {
       if (key.type === Node.Keyword) {
@@ -124,7 +127,7 @@ export class HashMapType {
       return newHashMap;
   }
   toString(): string {
-    return `{${this.entries().map(([k, v]) => `${k.toString()} ${v.toString()}`).join(", ")}}`;
+    return `{${this.entries().map(([k, v]) => `${k.toString()} ${v.toString()}`).join(" ")}}`;
   }
 }
 
@@ -142,7 +145,7 @@ export class StringType {
   constructor(public value: string) {
   }
   toString(): string {
-    return `"${this.value}"`;
+    return `${this.value}`;
   }
 }
 
@@ -255,7 +258,7 @@ export class SymbolType {
   private constructor(public value: string) {}
 
   toString(): string {
-    return this.value;
+    return `'${this.value}'`;
   }
 } 
 
@@ -278,7 +281,7 @@ export class KeywordType {
   }
 
   toString(): string {
-    return this.value;
+    return `:${this.value}`;
   }
 }
 
@@ -303,6 +306,16 @@ export const True = new BooleanType(true);
 export const False = new BooleanType(false);
 export const Nil = new NilType();
 
+// Exceptions
+export class TispError  {
+  type: Node.Error = Node.Error;
+  constructor(public message: TispType) {
+    
+  }
+
+}
+
+
 export function equals(a: TispType, b: TispType): boolean {
   const types = [a.type, b.type]
   
@@ -324,7 +337,13 @@ export function equals(a: TispType, b: TispType): boolean {
       return a.value === (b as StringType).value;
     case Node.Keyword:
       return a.value === (b as KeywordType).value;
-  }
+    case Node.HashMap:
+      if(a instanceof HashMapType && b instanceof HashMapType){
+      return equalsMap(a,b)
+      } else {
+        return false;
+      }
+    }
   }
   return false;
   
@@ -342,12 +361,12 @@ export function equalsArray(a: TispType[], b: TispType[]): boolean {
   return true;
 }
 
-export function equalsMap(a: Map<string, TispType>, b: Map<string, TispType>): boolean {
-  if (a.size !== b.size) {
+export function equalsMap(a: HashMapType, b: HashMapType): boolean {
+  if (a.keys().length !== b.keys().length) {
     return false;
   }
-  for (const [key, value] of a) {
-    if (!equals(value, b.get(key))) {
+  for (let key of a.keys()) {
+    if (!equals(a.get(key), b.get(key))) {
       return false;
     }
   }

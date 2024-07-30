@@ -24,3 +24,4 @@
 ;=>a
 (println(let* (a 123) (id a)))
 ;=>123
+(def! x {:a 1 :b 2})
