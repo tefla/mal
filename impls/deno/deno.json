@@ -1,0 +1,17 @@
+{
+  "imports": {
+    "@std/cli": "jsr:@std/cli@^1.0.1"
+  },
+  "tasks": {
+      "test:step0": "cd ../.. && make 'test^deno^step0'",
+      "test:step1": "cd ../.. && make 'test^deno^step1'",
+      "test:step2": "cd ../.. && make 'test^deno^step2'",
+      "test:step3": "cd ../.. && make 'test^deno^step3'",
+      "test:step4": "cd ../.. && make 'test^deno^step4'",
+      "test:step5": "cd ../.. && make 'test^deno^step5'",
+      "test:step6": "cd ../.. && make 'test^deno^step6'",
+      "test:step7": "cd ../.. && make 'test^deno^step7'",
+      "test:step8": "cd ../.. && make 'test^deno^step8'",
+      "test:step9": "cd ../.. && make 'test^deno^step9'"
+  }
+}
