@@ -1,0 +1,2 @@
+#!/bin/zsh
+exec bun $(dirname $0)/${STEP:-stepA_mal}.ts "${@}"

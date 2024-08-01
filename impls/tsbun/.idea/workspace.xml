@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="ef914ef1-ed5e-4653-bd63-8275fa7cc0f8" name="Changes" comment="ZXC">
+      <change beforePath="$PROJECT_DIR$/../elixir2/lib/mal/core.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mal/core.ex" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../elixir2/lib/mal/printer.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mal/printer.ex" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../elixir2/lib/mal/reader.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mal/reader.ex" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../elixir2/lib/mix/tasks/step1_read_print.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mix/tasks/step1_read_print.ex" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;tefla&quot;
+  }
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/tefla/mal.git&quot;,
+    &quot;accountId&quot;: &quot;4031cffd-aab8-493a-a35c-8fda8aa77cc6&quot;
+  }
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="2jNebmi7gCmJcbhNKTWtMumzUAE" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/tim/dev/playground/mal/impls/tsbun&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/Users/tim/dev/playground/mal/impls/tsbun/node_modules/typescript/lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
+    </key>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9f38398b9061-39b83d9b5494-intellij.indexing.shared.core-IU-241.18034.62" />
+        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-IU-241.18034.62" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="ef914ef1-ed5e-4653-bd63-8275fa7cc0f8" name="Changes" comment="" />
+      <created>1721232035288</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1721232035288</updated>
+      <workItem from="1721232036327" duration="1303000" />
+      <workItem from="1721242515985" duration="4123000" />
+      <workItem from="1721316102815" duration="254000" />
+      <workItem from="1721316357949" duration="1572000" />
+      <workItem from="1721402423391" duration="9516000" />
+      <workItem from="1721571098384" duration="4757000" />
+      <workItem from="1721582422613" duration="1729000" />
+    </task>
+    <task id="LOCAL-00001" summary="ZXC">
+      <option name="closed" value="true" />
+      <created>1721572115785</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1721572115785</updated>
+    </task>
+    <task id="LOCAL-00002" summary="ZXC">
+      <option name="closed" value="true" />
+      <created>1721629566649</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1721629566649</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="ZXC" />
+    <option name="LAST_COMMIT_MESSAGE" value="ZXC" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

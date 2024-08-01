@@ -28,7 +28,8 @@ defmodule Mix.Tasks.Step1ReadPrint do
     read(line)
       |> eval
       |> print
+  catch
+    {:error, msg} -> "Error: #{msg}"
   end
 
 end
-
