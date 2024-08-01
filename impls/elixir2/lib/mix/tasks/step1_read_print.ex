@@ -20,7 +20,7 @@ defmodule Mix.Tasks.Step1ReadPrint do
   end
 
   defp print(input) do
-    input
+    Mal.Printer.print_str(input)
   end
 
   defp read_eval_print(:eof), do: exit(:normal)
