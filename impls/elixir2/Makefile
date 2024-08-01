@@ -1,6 +1,6 @@
-#SOURCES_BASE = lib/mal/types.ex lib/mal/reader.ex lib/mal/printer.ex
-#SOURCES_LISP = lib/mal/env.ex lib/mal/core.ex lib/mix/tasks/stepA_mal.ex
-SOURCES = #$(SOURCES_BASE) $(SOURCES_LISP)
+SOURCES_BASE = lib/mal/types.ex lib/mal/reader.ex lib/mal/printer.ex
+SOURCES_LISP = lib/mal/core.ex
+SOURCES = $(SOURCES_BASE) $(SOURCES_LISP)
 
 all:
 	mix compile
