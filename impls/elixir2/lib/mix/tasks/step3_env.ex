@@ -1,15 +1,23 @@
 
 defmodule Mix.Tasks.Step3Env do
 
-  def run(_), do: loop()
+  def run(_) do
+    env = Mal.Env.new()
+    Mal.Env.set(env, "+", fn (a, b) -> a + b end)
+    Mal.Env.set(env, "-", fn (a, b) -> a - b end)
+    Mal.Env.set(env, "*", fn (a, b) -> a * b end)
+    Mal.Env.set(env, "/", fn (a, b) -> a / b end)
+    read_eval_print("(let* [x 10 y 20] (+ x y))", env)
+    loop(env)
+  end
 
-  defp loop do
+  defp loop(env) do
     IO.write(:stdio, "user> ")
     IO.read(:stdio, :line)
-      |> read_eval_print
+      |> (&read_eval_print(&1, env)).()
       |> IO.puts
 
-    loop()
+    loop(env)
   end
 
   defp read(input) do
@@ -19,7 +27,7 @@ defmodule Mix.Tasks.Step3Env do
   defp eval_ast({:symbol, ast}, env) do
     case Mal.Env.get(env, ast) do
       {:ok, val} -> val
-      :not_found -> throw({:error , "Symbol not found"})
+      :not_found -> throw({:error , "Symbol #{ast} not found"})
     end
   end
   defp eval_ast({:list, ast}, env) do
@@ -46,32 +54,39 @@ defmodule Mix.Tasks.Step3Env do
   defp eval_list([{:symbol, "def!"}, {:symbol, key}, value], env) do
     evaled = eval(value, env)
     Mal.Env.set(env, key, evaled)
-    IO.write(key)
     evaled
+  end
+
+
+  defp eval_list([{:symbol, "let*"}, {_, bindings}, body], env) do
+    new_env = Mal.Env.new(env)
+    eval_bindings(bindings, new_env)
+    eval(body, new_env)
   end
 
   defp eval_list(ast, env) do
     {:list, [func | args]} = eval_ast({:list, ast}, env)
     apply(func, args)
   end
+
+  defp eval_bindings([], _), do: []
+  defp eval_bindings([{:symbol, key}, value | rest], env) do
+    Mal.Env.set(env, key, eval(value, env))
+    eval_bindings(rest, env)
+  end
+
   defp print(input) do
     Mal.Printer.print_str(input)
   end
 
-  defp read_eval_print(:eof), do: exit(:normal)
-  defp read_eval_print(line) do
+  defp read_eval_print(:eof, _), do: exit(:normal)
+  defp read_eval_print(line, env) do
     # env = %{
     #   "+" => fn (a, b) -> a + b end,
     #   "-" => fn (a, b) -> a - b end,
     #   "*" => fn (a, b) -> a * b end,
     #   "/" => fn (a, b) -> a / b end,
     # }
-
-    env = Mal.Env.new()
-    Mal.Env.set(env, "+", fn (a, b) -> a + b end)
-    Mal.Env.set(env, "-", fn (a, b) -> a - b end)
-    Mal.Env.set(env, "*", fn (a, b) -> a * b end)
-    Mal.Env.set(env, "/", fn (a, b) -> a / b end)
 
     read(line)
       |> (&eval(&1, env)).()
