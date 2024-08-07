@@ -1,6 +1,6 @@
 
 defmodule Mix.Tasks.Step4IfFnDo do
-
+  import Mal.Types
   def run(_) do
     env = Mal.Env.new()
     Mal.Env.merge(env, Mal.Core.ns())
@@ -71,16 +71,21 @@ defmodule Mix.Tasks.Step4IfFnDo do
   defp eval_list([{:symbol, "do"}, {:list, ast}], env) do
     ast
     |> List.delete(-1)
-    |> Enum.each(&eval(&1, env))
+    |> list
+    |> eval(env)
 
     eval(List.last(ast), env)
   end
 
+
   # Evaluate the condition, if true, evaluate the true_case, else evaluate the false_case
-  defp eval_list([{:symbol, "if"}, condition, true_case, false_case], env) do
+  defp eval_list([{:symbol, "if"}, condition, true_case | false_case], env) do
     case eval(condition, env) do
-      false -> eval(false_case, env)
-      nil -> eval(false_case, env)
+      n when n == false or n == nil -> case false_case do
+        [] -> nil
+        [body] ->  eval(body, env)
+      end
+      #nil -> eval(false_case, env)
       _ -> eval(true_case, env)
     end
   end
