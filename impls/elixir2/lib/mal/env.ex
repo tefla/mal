@@ -1,11 +1,18 @@
 
 defmodule Mal.Env do
-  def new(outer \\ nil)
-  def new(outer) do
+  def new(outer \\ nil, bindings \\ [], exprs \\ [])
+  def new(outer, bindings, exprs) do
     {:ok, pid} = Agent.start_link(fn ->
       %{outer: outer, env: %{}}
     end)
+    set_binding(pid, bindings, exprs)
     pid
+  end
+
+  defp set_binding(env, [], []), do: env
+  defp set_binding(env, [{:symbol, key}| keys], [value | values]) do
+    set(env, key, value)
+    set_binding(env, keys, values)
   end
   def set(env, key, value) do
     Agent.update(env, fn state ->
@@ -33,5 +40,12 @@ defmodule Mal.Env do
       nil -> :not_found
       env -> retrieve_key(env, key)
     end
+  end
+
+  # Merge a dictionary of bindings into the current environment
+  def merge(env, dict) do
+    Agent.update(env, fn state ->
+      %{state | env: Map.merge(state.env, dict)}
+    end)
   end
 end

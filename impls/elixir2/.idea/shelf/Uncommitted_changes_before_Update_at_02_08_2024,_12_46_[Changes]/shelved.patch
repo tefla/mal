@@ -1,0 +1,2360 @@
+Index: ../deno/core.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { pr_str_antlr } from \"./printer.ts\";\nimport { readStr } from \"./reader.ts\";\nimport { FunctionType, NumberType, True, False, Nil, ListType, Node, equals, isSeq, StringType, type TispType, VectorType, AtomType, TispError, KeywordType, HashMapType, SymbolType } from \"./types.ts\";\nimport { readFileSync } from \"node:fs\"\nexport const ns = {\n    '+': FunctionType.fromBootstrap((a: NumberType, b: NumberType) => new NumberType(a.value + b.value)),\n    '-': FunctionType.fromBootstrap((a: NumberType, b: NumberType) => new NumberType(a.value - b.value)),\n    '*': FunctionType.fromBootstrap((a: NumberType, b: NumberType) => new NumberType(a.value * b.value)),\n    '/': FunctionType.fromBootstrap((a: NumberType, b: NumberType) => new NumberType(a.value / b.value)),\n    'true': True,\n    'false': False,\n    'nil': Nil,\n\n    'list': FunctionType.fromBootstrap((...args) => {\n        return new ListType(args);\n    }),\n    'list?': FunctionType.fromBootstrap((node) => {\n        return node.type === Node.List ? True : False;\n    }),\n    'empty?': FunctionType.fromBootstrap((node) => {\n        return node.elements.length === 0 ? True : False;\n    }),\n    'count': FunctionType.fromBootstrap((node) => {\n        if (isSeq(node)) {\n            return new NumberType(node.elements.length);\n        }\n        return 0;\n    }),\n    '=': FunctionType.fromBootstrap((a, b) => {\n        return equals(a, b) ? True : False;\n    }),\n    '<': FunctionType.fromBootstrap((a, b) => {\n        return a.value < b.value ? True : False;\n    }),\n    '>': FunctionType.fromBootstrap((a, b) => {\n        return a.value > b.value ? True : False;\n    }),\n    '<=': FunctionType.fromBootstrap((a, b) => {\n        return a.value <= b.value ? True : False;\n    }),\n    '>=': FunctionType.fromBootstrap((a, b) => {\n        return a.value >= b.value ? True : False;\n    }),\n    'pr-str': FunctionType.fromBootstrap((...args: TispType[]) => {\n        return new StringType(args.map(arg => pr_str_antlr(arg, true)).join(\" \"));\n    }),\n    'str': FunctionType.fromBootstrap((...args: TispType[]) => {\n        return new StringType(args.map(arg => pr_str_antlr(arg, false)).join(\"\"));\n    }),\n    'prn': FunctionType.fromBootstrap((...args: TispType[]) => {\n        console.log(...args.map(arg => pr_str_antlr(arg, true)));\n        return Nil;\n    }),\n    'println': FunctionType.fromBootstrap((...args: TispType[]) => {\n        console.log(...args.map(arg => pr_str_antlr(arg, false)));\n        return Nil;\n    }),\n\n    'read-string': FunctionType.fromBootstrap((str: StringType) => {\n        return readStr(str.value);\n    }),\n    'slurp': FunctionType.fromBootstrap((str: StringType) => {\n        return new StringType(readFileSync(str.value, 'utf-8'));\n    }),\n    'atom': FunctionType.fromBootstrap((node: TispType) => {\n        return new AtomType(node);\n    }),\n    'atom?': FunctionType.fromBootstrap((node: TispType) => {\n        return node.type === Node.Atom ? True : False;\n    }),\n    'deref': FunctionType.fromBootstrap((node: AtomType) => {\n        if (node.type !== Node.Atom) {\n            throw new Error(`Expected atom but got ${node}`);\n        }\n        return node.value;\n    }),\n    'reset!': FunctionType.fromBootstrap((node: AtomType, value: TispType) => {\n        if (node.type !== Node.Atom) {\n            throw new Error(`Expected atom but got ${node}`);\n        }\n        node.value = value;\n        return value;\n    }),\n    'swap!': FunctionType.fromBootstrap((node: AtomType, func: FunctionType, ...args: TispType[]) => {\n        if (node.type !== Node.Atom) {\n            throw new Error(`Expected atom but got ${node}`);\n        }\n        if (func.func === undefined) {\n            throw new Error(`Expected function but got ${func}`);\n        }\n        node.value = func.func(node.value, ...args);\n        return node.value;\n    }),\n    'cons': FunctionType.fromBootstrap((node: TispType, list: ListType) => {\n        if (!isSeq(list)) {\n            throw new Error(`Expected list but got ${list}`);\n        }\n        return new ListType([node, ...list.elements]);\n    }),\n    'concat': FunctionType.fromBootstrap((...lists: ListType[]) => {\n        return new ListType(lists.reduce((acc, list) => acc.concat(list.elements), []));\n    }),\n    'vec': FunctionType.fromBootstrap((list: TispType) => {\n        if (list.type === Node.Vector) {\n            return list;\n        }\n        if (!isSeq(list)) {\n            throw new Error(`Expected list but got ${list}`);\n        }\n        return new VectorType(list.elements);\n    }),\n    'nth': FunctionType.fromBootstrap((list: ListType, index: NumberType) => {\n        if (!isSeq(list)) {\n            throw new Error(`Expected list but got ${list}`);\n        }\n        if (index.value < 0 || index.value >= list.elements.length) {\n            throw new Error(`Index out of bounds`);\n        }\n        return list.elements[index.value];\n    }),\n    'first': FunctionType.fromBootstrap((list: ListType) => {\n        if (!isSeq(list) || list.elements.length === 0) {\n            return Nil;\n        }\n        return list.elements[0];\n    }),\n    'rest': FunctionType.fromBootstrap((list: ListType) => {\n        if (!isSeq(list) || list.elements.length === 0) {\n            return new ListType([]);\n        }\n\n        return new ListType(list.elements.slice(1));\n    }),\n    'throw': FunctionType.fromBootstrap((v: TispType) => {\n        throw v;\n    }),\n    'apply': FunctionType.fromBootstrap((func: FunctionType, ...args: TispType[]) => {\n        const [last] = args.slice(-1);\n        if (!isSeq(last)) {\n            throw new Error(`Expected list but got ${last}`);\n        }\n        const argsList = args.slice(0, -1).concat(last.elements);\n        return func.func(...argsList);\n    }),\n    'map': FunctionType.fromBootstrap((func: FunctionType, list: ListType) => {\n        if (!isSeq(list)) {\n            throw new Error(`Expected list but got ${list}`);\n        }\n        return new ListType(list.elements.map((node) => func.func(node)));\n    }),\n    'map?': FunctionType.fromBootstrap((node: TispType) => {\n        return node.type === Node.HashMap ? True : False;\n    }),\n    'nil?': FunctionType.fromBootstrap((node: TispType) => {\n        return node === Nil ? True : False;\n    }),\n    'true?': FunctionType.fromBootstrap((node: TispType) => {\n        return node === True ? True : False;\n    }),\n    'false?': FunctionType.fromBootstrap((node: TispType) => {\n        return node === False ? True : False;\n    }),\n    'symbol?': FunctionType.fromBootstrap((node: TispType) => {\n        return node.type === Node.Symbol ? True : False;\n    }),\n    'keyword?': FunctionType.fromBootstrap((node: TispType) => {\n        return node.type === Node.Keyword ? True : False;\n    }),\n    'keyword': FunctionType.fromBootstrap((str: StringType) => {\n        return new KeywordType(str.value);\n    }),\n    'vector?': FunctionType.fromBootstrap((node: TispType) => {\n        return node.type === Node.Vector ? True : False;\n    }),\n    keys: FunctionType.fromBootstrap((node: TispType) => {\n        if (node.type === Node.HashMap) {\n            return new ListType(node.keys());\n        }\n        throw new Error(`Expected hashmap but got ${node}`);\n    }),\n    'hash-map': FunctionType.fromBootstrap((...args: TispType[]) => {\n        return new HashMapType(args);\n    }),\n    'get': FunctionType.fromBootstrap((node: HashMapType, key: TispType) => {\n        if(node.type !== Node.HashMap){\n            return Nil;\n        }\n        return node.get(key);\n    }),\n    'assoc': FunctionType.fromBootstrap((node: HashMapType, ...args) => {\n        return node.assoc(args);\n    }),\n    'dissoc': FunctionType.fromBootstrap((node: HashMapType, ...args) => {\n        return node.dissoc(args);\n    }),\n    'contains?': FunctionType.fromBootstrap((node: HashMapType, key: TispType) => {\n        return node.has(key) ? True : False;\n    }),\n    'vals': FunctionType.fromBootstrap((node: HashMapType) => {\n        return new ListType(node.vals());\n    }),\n    'symbol': FunctionType.fromBootstrap((str: StringType) => {\n        return SymbolType.get(str.value);\n    }),\n    'vector': FunctionType.fromBootstrap((...args: TispType[]) => {\n        return new VectorType(args);\n    }),\n    'sequential?': FunctionType.fromBootstrap((node: TispType) => {\n        return isSeq(node) ? True : False;\n    }),\n\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/../deno/core.ts b/../deno/core.ts
+--- a/../deno/core.ts	(revision aca0b58da07847c2bb872827d75c400ade4be369)
++++ b/../deno/core.ts	(date 1722333092222)
+@@ -2,6 +2,9 @@
+ import { readStr } from "./reader.ts";
+ import { FunctionType, NumberType, True, False, Nil, ListType, Node, equals, isSeq, StringType, type TispType, VectorType, AtomType, TispError, KeywordType, HashMapType, SymbolType } from "./types.ts";
+ import { readFileSync } from "node:fs"
++import { createInterface } from "node:readline"
++import { stdin as input, stdout as output } from "node:process"
++
+ export const ns = {
+     '+': FunctionType.fromBootstrap((a: NumberType, b: NumberType) => new NumberType(a.value + b.value)),
+     '-': FunctionType.fromBootstrap((a: NumberType, b: NumberType) => new NumberType(a.value - b.value)),
+@@ -134,7 +137,7 @@
+     'throw': FunctionType.fromBootstrap((v: TispType) => {
+         throw v;
+     }),
+-    'apply': FunctionType.fromBootstrap((func: FunctionType, ...args: TispType[]) => {
++    'apply': FunctionType.fromBootstrap( (func: FunctionType, ...args: TispType[]) => {
+         const [last] = args.slice(-1);
+         if (!isSeq(last)) {
+             throw new Error(`Expected list but got ${last}`);
+@@ -142,11 +145,11 @@
+         const argsList = args.slice(0, -1).concat(last.elements);
+         return func.func(...argsList);
+     }),
+-    'map': FunctionType.fromBootstrap((func: FunctionType, list: ListType) => {
++    'map': FunctionType.fromBootstrap(async (func: FunctionType, list: ListType) => {
+         if (!isSeq(list)) {
+             throw new Error(`Expected list but got ${list}`);
+         }
+-        return new ListType(list.elements.map((node) => func.func(node)));
++        return new ListType(await Promise.all(list.elements.map((node) => func.func(node))));
+     }),
+     'map?': FunctionType.fromBootstrap((node: TispType) => {
+         return node.type === Node.HashMap ? True : False;
+@@ -208,5 +211,21 @@
+     'sequential?': FunctionType.fromBootstrap((node: TispType) => {
+         return isSeq(node) ? True : False;
+     }),
++    'readline': FunctionType.fromBootstrap((prompt: StringType) => {
++        if(prompt.type !== Node.String){
++            throw new Error(`Expected string but got ${prompt}`);
++        }
++        const promise = new Promise<StringType>((resolve) => {
++            const rl = createInterface({
++                input,
++                output
++            });
++            rl.question(prompt.value, (answer: string) => {
++                resolve(new StringType(answer));
++                rl.close();
++            });
++        })
++        return promise;
++    }),
+ 
+ }
+Index: ../deno/types.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { Env } from \"./env.ts\";\n\nexport type TispType =\n  NumberType\n  | ListType\n  | VectorType\n  | FunctionType\n  | TispProgramType\n  | BooleanType\n  | NilType\n  | StringType\n  | KeywordType\n  | AtomType\n  | SymbolType\n  | HashMapType\n  | TispError;\n\nexport const enum Node {\n  Number = \"Number\",\n  Ident = \"Ident\",\n  List = \"List\",\n  Vector = \"Vector\",\n  Function = \"Function\",\n  Program = \"Program\",\n  Boolean = \"Boolean\",\n  Nil = \"Nil\",\n  String = \"String\",\n  Keyword = \"Keyword\",\n  Atom = \"Atom\",\n  Symbol = \"Symbol\",\n  HashMap = \"HashMap\",\n  Error = \"Error\"\n}\nexport class HashMapType {\n  type: Node.HashMap = Node.HashMap;\n  stringMap: { [key: string]: TispType } = {};\n  keywordMap = new Map<TispType, TispType>();\n\n  constructor(list: TispType[]) {\n    while (list.length !== 0) {\n      const key = list.shift()!;\n      const value = list.shift();\n      if (value == null) {\n        throw new Error(\"unexpected hash length\");\n      }\n      if (key.type === Node.Keyword) {\n        this.keywordMap.set(key, value);\n      } else if (key.type === Node.String) {\n        this.stringMap[key.value] = value;\n      } else {\n        throw new Error(`unexpected key symbol: ${key.type}, expected: keyword or string`);\n      }\n    }\n  }\n\n\n  has(key: KeywordType | StringType) {\n    if (key.type === Node.Keyword) {\n      return !!this.keywordMap.get(key);\n    }\n    return !!this.stringMap[key.value];\n  }\n\n  get(key: KeywordType | StringType) {\n    if (key.type === Node.Keyword) {\n      return this.keywordMap.get(key) || Nil;\n    }\n    return this.stringMap[key.value] || Nil;\n  }\n\n  entries(): [TispType, TispType][] {\n    const list: [TispType, TispType][] = [];\n\n    this.keywordMap.forEach((v, k) => {\n      list.push([k, v]);\n    });\n    Object.keys(this.stringMap).forEach(v => list.push([new StringType(v), this.stringMap[v]]));\n\n    return list;\n  }\n\n  keys(): TispType[] {\n    const list: TispType[] = [];\n    this.keywordMap.forEach((_v, k) => {\n      list.push(k);\n    });\n    Object.keys(this.stringMap).forEach(v => list.push(new StringType(v)));\n    return list;\n  }\n\n  vals(): TispType[] {\n    const list: TispType[] = [];\n    this.keywordMap.forEach(v => {\n      list.push(v);\n    });\n    Object.keys(this.stringMap).forEach(v => list.push(this.stringMap[v]));\n    return list;\n  }\n\n  assoc(args: TispType[]): HashMapType {\n    const list: TispType[] = [];\n    this.keywordMap.forEach((value, key) => {\n      list.push(key);\n      list.push(value);\n    });\n    Object.keys(this.stringMap).forEach(keyStr => {\n      list.push(new StringType(keyStr));\n      list.push(this.stringMap[keyStr]);\n    });\n\n    return new HashMapType(list.concat(args));\n  }\n\n  dissoc(args: TispType[]): HashMapType {\n    const newHashMap = this.assoc([]);\n\n    args.forEach(arg => {\n      if (arg.type === Node.String) {\n        delete newHashMap.stringMap[arg.value];\n      } else if (arg.type === Node.Keyword) {\n        newHashMap.keywordMap.delete(arg);\n      } else {\n        throw new Error(`unexpected symbol: ${arg.type}, expected: keyword or string`);\n      }\n    });\n    return newHashMap;\n  }\n  toString(): string {\n    return `{${this.entries().map(([k, v]) => `${k.toString()} ${v.toString()}`).join(\" \")}}`;\n  }\n}\n\nexport class AtomType {\n  type: Node.Atom = Node.Atom;\n  constructor(public value: TispType) {\n  }\n  toString(): string {\n    return `(atom ${this.value.toString()})`;\n  }\n}\n// StringType\nexport class StringType {\n  type: Node.String = Node.String;\n  constructor(public value: string) {\n  }\n  toString(): string {\n    return `${this.value}`;\n  }\n}\n\nexport class TispProgramType {\n  type: Node.Program = Node.Program;\n  constructor(public elements: TispType[]) {\n  }\n  toString(): string {\n    return this.elements.map(node => node.toString()).join(\" \");\n  }\n}\n// AtomType\nexport class VectorType {\n  type: Node.Vector = Node.Vector;\n  constructor(public elements: TispType[]) {\n  }\n  toString(): string {\n    return `[${this.elements.map(node => node.toString()).join(\" \")}]`;\n  }\n}\n\ntype TispF = (...args: (TispType | undefined)[]) => TispType;\n\n\n// FunctionType\nexport class FunctionType {\n\n  static fromBootstrap = (func: TispF) => {\n    const f = new FunctionType();\n    f.func = func;\n    return f;\n  }\n\n  static fromAst = (eval_mal: (ast: TispType, env: Env) => TispType, env: Env, params: string[], body: TispType) => {\n    const f = new FunctionType();\n    f.env = env;\n    f.params = params;\n    f.body = body;\n    f.func = (...args) => {\n      const newEnv = new Env(env, params, args);\n      return eval_mal(body, newEnv);\n    }\n    return f;\n  }\n\n  type: Node.Function = Node.Function;\n  env?: Env;\n  params?: string[];\n  body?: TispType;\n\n  is_macro = false;\n  func?: TispF;\n\n  private constructor() {\n\n  }\n  toString(): string {\n    return \"#<function>\";\n  }\n  newEnv(args: TispType[]) {\n    return new Env(this.env, this.params, args);\n  }\n  toMacro = () => {\n    const f = new FunctionType();\n    f.env = this.env;\n    f.params = this.params;\n    f.body = this.body;\n    f.func = this.func;\n    f.is_macro = true;\n    return f;\n  }\n\n}\n\n// List Type\nexport class ListType {\n  type: Node.List = Node.List;\n  constructor(public elements: TispType[]) {\n  }\n  toString(): string {\n    return `(${this.elements.map(node => node.toString()).join(\" \")})`;\n  }\n}\n\n// NumberType\nexport class NumberType {\n  type: Node.Number = Node.Number;\n\n  constructor(public value: number) {\n  }\n  toString(): string {\n    return this.value.toString();\n  }\n}\n\nexport class SymbolType {\n  type: Node.Symbol = Node.Symbol;\n  static map = new Map<symbol, SymbolType>();\n\n  static get(name: string): TispType {\n    const sym = Symbol.for(name);\n    let token = this.map.get(sym);\n    if (token) {\n      return token;\n    }\n    token = new SymbolType(name);\n    this.map.set(sym, token);\n    return token;\n  }\n  private constructor(public value: string) { }\n\n  toString(): string {\n    return `'${this.value}'`;\n  }\n}\n\n// KeywordType\nexport class KeywordType {\n  type: Node.Keyword = Node.Keyword;\n  constructor(public value: string) {\n  }\n  static map = new Map<symbol, KeywordType>();\n\n  static get(name: string): KeywordType {\n    const sym = Symbol.for(name);\n    let token = this.map.get(sym);\n    if (token) {\n      return token;\n    }\n    token = new KeywordType(name);\n    this.map.set(sym, token);\n    return token;\n  }\n\n  toString(): string {\n    return `:${this.value}`;\n  }\n}\n\n// BooleanType\nclass BooleanType {\n  type: Node.Boolean = Node.Boolean;\n  constructor(public value: boolean) {\n  }\n  toString(): string {\n    return this.value.toString();\n  }\n}\n\nclass NilType {\n  type: Node.Nil = Node.Nil;\n  toString(): string {\n    return \"nil\";\n  }\n}\n\nexport const True = new BooleanType(true);\nexport const False = new BooleanType(false);\nexport const Nil = new NilType();\n\n// Exceptions\nexport class TispError {\n  type: Node.Error = Node.Error;\n  constructor(public message: TispType) {\n\n  }\n\n}\n\n\nexport function equals(a: TispType, b: TispType): boolean {\n  const types = [a.type, b.type]\n\n  if ((isSeq(a) && isSeq(b)) || a.type === b.type) {\n    switch (a.type) {\n      case Node.Number:\n        return a.value === (b as NumberType).value;\n      case Node.Symbol:\n        return a.value === (b as SymbolType).value;\n      case Node.Boolean:\n        return a.value === (b as BooleanType).value;\n      case Node.Nil:\n        return true;\n      case Node.List:\n        return equalsArray(a.elements, (b as ListType).elements);\n      case Node.Vector:\n        return equalsArray(a.elements, (b as VectorType).elements);\n      case Node.String:\n        return a.value === (b as StringType).value;\n      case Node.Keyword:\n        return a.value === (b as KeywordType).value;\n      case Node.HashMap:\n        if (a instanceof HashMapType && b instanceof HashMapType) {\n          return equalsMap(a, b)\n        } else {\n          return false;\n        }\n    }\n  }\n  return false;\n\n}\n\nexport function equalsArray(a: TispType[], b: TispType[]): boolean {\n  if (a.length !== b.length) {\n    return false;\n  }\n  for (let i = 0; i < a.length; i++) {\n    if (!equals(a[i], b[i])) {\n      return false;\n    }\n  }\n  return true;\n}\n\nexport function equalsMap(a: HashMapType, b: HashMapType): boolean {\n  if (a.keys().length !== b.keys().length) {\n    return false;\n  }\n  for (let key of a.keys()) {\n    if (!equals(a.get(key), b.get(key))) {\n      return false;\n    }\n  }\n  return true;\n}\n\n// Equality\n\nexport function isSeq(ast: TispType): ast is ListType | VectorType {\n  return ast.type === Node.List || ast.type === Node.Vector;\n}\n\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/../deno/types.ts b/../deno/types.ts
+--- a/../deno/types.ts	(revision aca0b58da07847c2bb872827d75c400ade4be369)
++++ b/../deno/types.ts	(date 1722331178756)
+@@ -13,7 +13,8 @@
+   | AtomType
+   | SymbolType
+   | HashMapType
+-  | TispError;
++  | TispError
++  | PromiseType;
+ 
+ export const enum Node {
+   Number = "Number",
+@@ -29,7 +30,8 @@
+   Atom = "Atom",
+   Symbol = "Symbol",
+   HashMap = "HashMap",
+-  Error = "Error"
++  Error = "Error",
++  Promise = "Promise"
+ }
+ export class HashMapType {
+   type: Node.HashMap = Node.HashMap;
+@@ -166,7 +168,7 @@
+   }
+ }
+ 
+-type TispF = (...args: (TispType | undefined)[]) => TispType;
++type TispF = (...args: TispType[]) => TispType;
+ 
+ 
+ // FunctionType
+@@ -178,14 +180,14 @@
+     return f;
+   }
+ 
+-  static fromAst = (eval_mal: (ast: TispType, env: Env) => TispType, env: Env, params: string[], body: TispType) => {
++  static fromAst = (eval_mal: (ast: TispType, env: Env) => Promise<TispType>, env: Env, params: string[], body: TispType) => {
+     const f = new FunctionType();
+     f.env = env;
+     f.params = params;
+     f.body = body;
+-    f.func = (...args) => {
++    f.func = async (...args) => {
+       const newEnv = new Env(env, params, args);
+-      return eval_mal(body, newEnv);
++      return await eval_mal(body, newEnv);
+     }
+     return f;
+   }
+@@ -314,6 +316,17 @@
+ 
+ }
+ 
++// Asynchronous
++export class PromiseType {
++  type: Node.Promise = Node.Promise;
++  constructor(public value: Promise<TispType>) {
++  }
++
++}
++
++
++
++// Equality
+ 
+ export function equals(a: TispType, b: TispType): boolean {
+   const types = [a.type, b.type]
+@@ -372,9 +385,7 @@
+   return true;
+ }
+ 
+-// Equality
+ 
+ export function isSeq(ast: TispType): ast is ListType | VectorType {
+   return ast.type === Node.List || ast.type === Node.Vector;
+ }
+-
+Index: ../deno/.idea/scala_compiler.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/../deno/.idea/scala_compiler.xml b/../deno/.idea/scala_compiler.xml
+new file mode 100644
+--- /dev/null	(date 1722419808928)
++++ b/../deno/.idea/scala_compiler.xml	(date 1722419808928)
+@@ -0,0 +1,6 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<project version="4">
++  <component name="ScalaCompilerConfiguration">
++    <option name="separateProdTestSources" value="false" />
++  </component>
++</project>
+\ No newline at end of file
+Index: ../deno/readline.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/../deno/readline.ts b/../deno/readline.ts
+new file mode 100644
+--- /dev/null	(date 1722341869467)
++++ b/../deno/readline.ts	(date 1722341869467)
+@@ -0,0 +1,18 @@
++import * as readline from 'node:readline';
++
++import { readFileSync, appendFileSync} from 'node:fs';
++import { stdin as input, stdout as output } from 'node:process';
++
++let history: string[] = [];
++try {
++  history = readFileSync(".history", { encoding: "utf8" }).split("\n").reverse()
++
++} catch(e) {
++  // console.log(e);
++}
++export const rl = readline.createInterface({ input, output, history });
++
++
++rl.on("line", (line) => {
++  appendFileSync(".history", line + "\n");
++})
+\ No newline at end of file
+Index: ../go2/.idea/go2.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/../go2/.idea/go2.iml b/../go2/.idea/go2.iml
+new file mode 100644
+--- /dev/null	(date 1722409666616)
++++ b/../go2/.idea/go2.iml	(date 1722409666616)
+@@ -0,0 +1,4 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<module version="4">
++  <component name="Go" enabled="true" />
++</module>
+\ No newline at end of file
+Index: ../deno/bla.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/../deno/bla.ts b/../deno/bla.ts
+new file mode 100644
+--- /dev/null	(date 1722495717043)
++++ b/../deno/bla.ts	(date 1722495717043)
+@@ -0,0 +1,50 @@
++
++const libreadline = Deno.dlopen('libreadline.so', {
++  'readline': {
++    parameters: ['buffer'],
++    result: 'buffer'
++  },
++  'add_history': {
++    parameters: ['buffer'],
++    result: 'void'
++  }
++});
++
++const add_history = (line: string, save=false) => {
++  const arg = new TextEncoder().encode(line);
++  const buf = new ArrayBuffer(arg.length);
++  new Uint8Array(buf).set(arg);
++  if(save){
++    Deno.writeTextFile(".history", line + "\n", {append: true});
++  }
++  libreadline.symbols.add_history(buf);
++}
++
++export const readline = (prompt: string) => {
++  const arg = new TextEncoder().encode(prompt);
++  const buf = new ArrayBuffer(arg.length);
++  new Uint8Array(buf).set(arg);
++
++  const x = libreadline.symbols.readline(buf);
++  const y = Deno.UnsafePointerView.getCString(x);
++  add_history(y, true);
++  return y;
++}
++try{
++  const history = await Deno.readTextFile(".history");
++  history.split("\n").reverse().forEach(l=>add_history(l));
++} catch(_){
++  // ignore
++}
++
++add_history("hello");
++add_history("world");
++add_history("foo");
++while(true) {
++  readline("prompt> ");
++}
++
++
++export const readlineAsync = async (prompt: string) => {
++
++}
+\ No newline at end of file
+Index: ../deno/stepA_mal.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { readStr } from \"./reader.ts\";\nimport { pr_str_antlr } from \"./printer.ts\";\nimport { Env } from \"./env.ts\";\nimport { FunctionType, VectorType, type TispType, Node, ListType, isSeq, NumberType, True, False, equals, Nil, StringType, SymbolType, HashMapType } from \"./types.ts\";\nimport { ns } from \"./core.ts\";\nimport { parseArgs } from \"@std/cli/parse-args\";\nimport * as readline from 'node:readline';\nimport { readFileSync, appendFileSync} from 'node:fs';\nimport { stdin as input, stdout as output } from 'node:process';\n\nlet history: string[] = [];\ntry {\n  history = readFileSync(\".history\", { encoding: \"utf8\" }).split(\"\\n\")\n\n} catch(e) {\n // console.log(e);\n}\nconst rl = readline.createInterface({ input, output, history });\n\n\nexport function isMacroCall(ast: TispType, env: Env) {\n  if (ast.type !== Node.List) {\n    return false;\n  }\n  const [first, ...rest] = ast.elements;\n  if (first.type !== Node.Symbol) {\n    return false;\n  }\n  const value = env.get(first.value);\n  return value && value.type === Node.Function && (value as FunctionType).is_macro;\n}\n\nfunction macroexpand(ast: TispType, env: Env): TispType {\n  while (isMacroCall(ast, env)) {\n    if (ast.type !== Node.List) {\n      throw new Error(`Expected list but got ${ast}`);\n    }\n    const [first, ...rest] = ast.elements;\n    if (first.type !== Node.Symbol) {\n      throw new Error(`Expected symbol but got ${first}`);\n    }\n    const value = env.get(first.value);\n    if (!value) {\n      throw new Error(`${first.value} not found`);\n    }\n    if (value.type !== Node.Function) {\n      throw new Error(`Expected function but got ${value}`);\n    }\n    const fn = value as FunctionType;\n    ast = fn.func(...rest);\n  }\n  return ast;\n}\nfunction starts_with(lst: TispType[], sym: string): boolean {\n  if (lst.length == 2) {\n    let a0 = lst[0]\n    switch (a0.type) {\n      case Node.Symbol:\n        return a0.value === sym;\n    }\n  }\n  return false;\n}\n\nfunction qq_loop(elt: TispType, acc: ListType): ListType {\n  if (elt.type == Node.List && starts_with(elt.elements, \"splice-unquote\")) {\n    return new ListType([SymbolType.get(\"concat\"), elt.elements[1], acc]);\n  } else {\n    return new ListType([SymbolType.get(\"cons\"), quasiquote(elt), acc]);\n  }\n}\n\nfunction qq_foldr(xs: TispType[]): ListType {\n  let acc = new ListType([])\n  for (let i = xs.length - 1; 0 <= i; i -= 1) {\n    acc = qq_loop(xs[i], acc)\n  }\n  return acc;\n}\n\nfunction quasiquote(ast: TispType): TispType {\n  switch (ast.type) {\n    case Node.Symbol:\n      return new ListType([SymbolType.get(\"quote\"), ast]);\n    case Node.HashMap:\n      return new ListType([SymbolType.get(\"quote\"), ast]);\n    case Node.List:\n      if (starts_with(ast.elements, \"unquote\")) {\n        return ast.elements[1];\n      } else {\n        return qq_foldr(ast.elements);\n      }\n    case Node.Vector:\n      return new ListType([SymbolType.get(\"vec\"), qq_foldr(ast.elements)]);\n    default:\n      return ast;\n  }\n}\n\nconst eval_ast = (ast: TispType, env: Env): TispType => {\n  switch (ast.type) {\n    case Node.Symbol:\n      const value = env.get(ast.value);\n      if (!value) {\n        throw new Error(`${ast.toString()} not found`)\n      }\n      return value;\n    case Node.List:\n      return new ListType(ast.elements.map(node => eval_mal(node, env)));\n    case Node.Vector:\n      return new VectorType(ast.elements.map(node => eval_mal(node, env)));\n    case Node.HashMap:\n      const list: TispType[] = [];\n      for (const [key, value] of ast.entries()) {\n        list.push(key);\n        list.push(eval_mal(value, env));\n      }\n      return new HashMapType(list);\n    default:\n      return ast;\n  }\n}\n\nconst eval_mal = (ast: TispType, env: Env): any => {\n  loop:\n  while (true) {\n    if (ast.type !== Node.List) {\n      return eval_ast(ast, env);\n    }\n    if (ast.elements.length < 1) {\n      return ast;\n    }\n\n    ast = macroexpand(ast, env);\n    if (!isSeq(ast)) {\n      return eval_ast(ast, env);\n    }\n    if (ast.elements.length < 1) {\n      return ast;\n    }\n\n    // Check if special form\n    const [firstParam, ...rest] = ast.elements\n    switch (firstParam.type) {\n      case Node.Symbol:\n        switch (firstParam.value) {\n          case 'def!': {\n            const [key, value] = rest;\n            if (key.type !== Node.Symbol) {\n              throw new Error(`Expected ident but got ${key}`);\n            }\n            if (!value) {\n              throw new Error(`Expected value but got ${value}`);\n            }\n            const evalValue = eval_mal(value, env);\n            env.set(key.value, evalValue);\n            return evalValue;\n          }\n          case 'let*': {\n            const [bindings, body] = rest;\n            if (!isSeq(bindings)) {\n              throw new Error(`Expected vector but got ${bindings}`);\n            }\n            env = new Env(env);\n            for (let i = 0; i < bindings.elements.length; i += 2) {\n              if (bindings.elements[i].type !== Node.Symbol) {\n                throw new Error(`Expected ident but got ${bindings.elements[i]}`);\n              }\n              env.set(bindings.elements[i].value, eval_mal(bindings.elements[i + 1], env));\n            }\n            ast = body;\n            continue loop;\n          }\n          case 'do': {\n            if (rest.length < 1) {\n              return Nil;\n            }\n            const lastElement = rest.pop()!;\n            rest.map(node => eval_mal(node, env));\n            ast = lastElement;\n            continue loop;\n          }\n          case 'if': {\n            const [condition, trueBranch, falseBranch] = rest\n            const evalCondition = eval_mal(condition, env);\n            if (!equals(evalCondition, False) && !equals(evalCondition, Nil)) {\n              ast = trueBranch;\n            } else {\n              if (!falseBranch) {\n                ast = Nil;\n              } else {\n                ast = falseBranch;\n              }\n            }\n            continue loop;\n          }\n          case 'fn*': {\n            const [params, body] = rest;\n            if (!isSeq(params)) {\n              throw new Error(`Expected vector but got ${params}`);\n            }\n            return FunctionType.fromAst(eval_mal, env, params.elements.map(e => {\n              if(e.type !== Node.Symbol) {\n                throw new Error(`Expected symbol but got ${e}`);\n              }\n              return e.value;\n            }), body);\n          }\n          case 'quote': {\n            if (rest.length !== 1) {\n              throw new Error(`quote expects 1 argument, got ${rest.length}`);\n            }\n            return rest[0];\n          }\n          case 'quasiquote': {\n            if (rest.length !== 1) {\n              throw new Error(`quasiquote expects 1 argument, got ${rest.length}`);\n            }\n            ast = quasiquote(rest[0]);\n            continue loop;\n          }\n          case 'quasiquoteexpand': {\n            return quasiquote(rest[0]);\n          }\n          case 'defmacro!': {\n            const [key, value] = rest;\n            if (key.type !== Node.Symbol) {\n              throw new Error(`Expected ident but got ${key}`);\n            }\n            const evalValue = eval_mal(value, env);\n\n            env.set(key.value, evalValue.toMacro());\n            return evalValue;\n          }\n          case 'macroexpand': {\n            return macroexpand(rest[0], env);\n          }\n          case 'try*': {\n            const [tryBody, catchNode] = rest;\n            try {\n              return eval_mal(tryBody, env);\n            } catch (e) {\n              if (catchNode && catchNode.type === Node.List) {\n                const [catchSym, err, catchBody] = catchNode.elements;\n                if (catchSym.value !== \"catch*\") {\n                  throw new Error(`Expected catch but got ${catchSym}`);\n                }\n                if (err.type !== Node.Symbol) {\n                  throw new Error(`Expected symbol but got ${err}`);\n                }\n                return eval_mal(catchBody, new Env(env, [err.value], [e]));\n              }\n              return e;\n            }\n          }\n          case '___': {\n            console.log(env)\n            return Nil\n          }\n        }\n    }\n    // ...\n\n\n    // otherwise Evaluate the function\n    const result = eval_ast(ast, env);\n    if (!isSeq(result)) {\n      throw new Error(`Not a function ${result}`);\n    }\n    const [fn, ...args] = result.elements\n    if (fn.type !== Node.Function) {\n      throw new Error(`Not a function ${fn}`);\n    }\n    if (fn.body) {\n      ast = fn.body;\n      env = fn.newEnv(args);\n      continue loop;\n    }\n    return fn.func(...args);\n  }\n\n}\nconst READ = (str: string): any => readStr(str);\nconst EVAL = (ast: any, _env?: any): any => eval_mal(ast, _env);\nconst PRINT = (exp: any): string => pr_str_antlr(exp)\nconst rep = (str: string): string => PRINT(EVAL(READ(str), rootEnv));\n\n\n\nrl.setPrompt('user> ');\n\nconst repl = () => {\n  rl.prompt()\n  rl.on('line', async (line) => {\n    if (line.length === 0) {\n      rl.close();\n    }\n    appendFileSync(\".history\", line + \"\\n\", { encoding: \"utf8\" });\n    try {\n      console.log(rep(line));\n    } catch (e) {\n      console.log(\"Error\", PRINT(e));\n    }\n    rl.prompt();\n  }).on('close', () => {\n    process.exit(0);\n  });\n\n\n}\n\nconst rootEnv = new Env();\nObject.entries(ns).map(([key, value]) => {\n  rootEnv.set(key, value);\n})\nrootEnv.set(\"eval\", FunctionType.fromBootstrap((ast: TispType) => {\n  if (!ast) {\n    throw new Error(\"Cannot eval nil\");\n  }\n  const res = eval_mal(ast, rootEnv);\n\n  return res;\n}));\n\nrep('(def! not (fn* (a) (if a false true)))')\n// load-file\nrep(`(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \"\\nnil)\")))))`)\nrep(`(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw \"odd number of forms to cond\")) (cons 'cond (rest (rest xs)))))))`)\nrep(`(defmacro! id (fn* (x) x))`)\nrep('(def! x {:a 1 :b 2})')\nrep('(try* xyz)')\nrep('(def! *host-language* \"Deno\")')\nconst args = parseArgs(\n  Deno.args,\n\n)\n\n// const [_, __, ...args] = positionals;\n\nif (args._.length > 0) {\n  // Read the file\n  const [filename, ...rest] = args._;\n  rootEnv.set(\"*ARGV*\", new ListType(rest.map(a => new StringType(a))));\n  rep(`(load-file \"${filename}\")`);\n} else {\n  rootEnv.set(\"*ARGV*\", new ListType([]));\n  // Add eval to rootEnv\n  repl();\n\n}\n\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/../deno/stepA_mal.ts b/../deno/stepA_mal.ts
+--- a/../deno/stepA_mal.ts	(revision aca0b58da07847c2bb872827d75c400ade4be369)
++++ b/../deno/stepA_mal.ts	(date 1722341555862)
+@@ -4,18 +4,7 @@
+ import { FunctionType, VectorType, type TispType, Node, ListType, isSeq, NumberType, True, False, equals, Nil, StringType, SymbolType, HashMapType } from "./types.ts";
+ import { ns } from "./core.ts";
+ import { parseArgs } from "@std/cli/parse-args";
+-import * as readline from 'node:readline';
+-import { readFileSync, appendFileSync} from 'node:fs';
+-import { stdin as input, stdout as output } from 'node:process';
+-
+-let history: string[] = [];
+-try {
+-  history = readFileSync(".history", { encoding: "utf8" }).split("\n")
+-
+-} catch(e) {
+- // console.log(e);
+-}
+-const rl = readline.createInterface({ input, output, history });
++import { rl } from "./readline.ts";
+ 
+ 
+ export function isMacroCall(ast: TispType, env: Env) {
+@@ -30,7 +19,7 @@
+   return value && value.type === Node.Function && (value as FunctionType).is_macro;
+ }
+ 
+-function macroexpand(ast: TispType, env: Env): TispType {
++async function macroexpand(ast: TispType, env: Env): TispType {
+   while (isMacroCall(ast, env)) {
+     if (ast.type !== Node.List) {
+       throw new Error(`Expected list but got ${ast}`);
+@@ -47,7 +36,7 @@
+       throw new Error(`Expected function but got ${value}`);
+     }
+     const fn = value as FunctionType;
+-    ast = fn.func(...rest);
++    ast = await fn.func(...rest);
+   }
+   return ast;
+ }
+@@ -97,7 +86,7 @@
+   }
+ }
+ 
+-const eval_ast = (ast: TispType, env: Env): TispType => {
++const eval_ast = async (ast: TispType, env: Env): Promise<TispType> => {
+   switch (ast.type) {
+     case Node.Symbol:
+       const value = env.get(ast.value);
+@@ -106,14 +95,14 @@
+       }
+       return value;
+     case Node.List:
+-      return new ListType(ast.elements.map(node => eval_mal(node, env)));
++      return new ListType(await Promise.all(ast.elements.map( (node) =>  eval_mal(node, env))));
+     case Node.Vector:
+-      return new VectorType(ast.elements.map(node => eval_mal(node, env)));
++      return new VectorType(await Promise.all(ast.elements.map( (node) =>  eval_mal(node, env))));
+     case Node.HashMap:
+       const list: TispType[] = [];
+       for (const [key, value] of ast.entries()) {
+         list.push(key);
+-        list.push(eval_mal(value, env));
++        list.push( await eval_mal(value, env));
+       }
+       return new HashMapType(list);
+     default:
+@@ -121,19 +110,19 @@
+   }
+ }
+ 
+-const eval_mal = (ast: TispType, env: Env): any => {
++const eval_mal = async (ast: TispType, env: Env): Promise<TispType> => {
+   loop:
+   while (true) {
+     if (ast.type !== Node.List) {
+-      return eval_ast(ast, env);
++      return await eval_ast(ast, env);
+     }
+     if (ast.elements.length < 1) {
+       return ast;
+     }
+ 
+-    ast = macroexpand(ast, env);
++    ast = await macroexpand(ast, env);
+     if (!isSeq(ast)) {
+-      return eval_ast(ast, env);
++      return await eval_ast(ast, env);
+     }
+     if (ast.elements.length < 1) {
+       return ast;
+@@ -152,7 +141,7 @@
+             if (!value) {
+               throw new Error(`Expected value but got ${value}`);
+             }
+-            const evalValue = eval_mal(value, env);
++            const evalValue = await eval_mal(value, env);
+             env.set(key.value, evalValue);
+             return evalValue;
+           }
+@@ -166,7 +155,7 @@
+               if (bindings.elements[i].type !== Node.Symbol) {
+                 throw new Error(`Expected ident but got ${bindings.elements[i]}`);
+               }
+-              env.set(bindings.elements[i].value, eval_mal(bindings.elements[i + 1], env));
++              env.set(bindings.elements[i].value, await eval_mal(bindings.elements[i + 1], env));
+             }
+             ast = body;
+             continue loop;
+@@ -182,7 +171,7 @@
+           }
+           case 'if': {
+             const [condition, trueBranch, falseBranch] = rest
+-            const evalCondition = eval_mal(condition, env);
++            const evalCondition = await eval_mal(condition, env);
+             if (!equals(evalCondition, False) && !equals(evalCondition, Nil)) {
+               ast = trueBranch;
+             } else {
+@@ -227,7 +216,7 @@
+             if (key.type !== Node.Symbol) {
+               throw new Error(`Expected ident but got ${key}`);
+             }
+-            const evalValue = eval_mal(value, env);
++            const evalValue = await eval_mal(value, env);
+ 
+             env.set(key.value, evalValue.toMacro());
+             return evalValue;
+@@ -238,7 +227,7 @@
+           case 'try*': {
+             const [tryBody, catchNode] = rest;
+             try {
+-              return eval_mal(tryBody, env);
++              return await eval_mal(tryBody, env);
+             } catch (e) {
+               if (catchNode && catchNode.type === Node.List) {
+                 const [catchSym, err, catchBody] = catchNode.elements;
+@@ -248,7 +237,7 @@
+                 if (err.type !== Node.Symbol) {
+                   throw new Error(`Expected symbol but got ${err}`);
+                 }
+-                return eval_mal(catchBody, new Env(env, [err.value], [e]));
++                return await eval_mal(catchBody, new Env(env, [err.value], [e]));
+               }
+               return e;
+             }
+@@ -256,6 +245,11 @@
+           case '___': {
+             console.log(env)
+             return Nil
++          }
++          case 'await': {
++            const [expr] = rest;
++            return await eval_mal(expr, env);
++
+           }
+         }
+     }
+@@ -263,7 +257,7 @@
+ 
+ 
+     // otherwise Evaluate the function
+-    const result = eval_ast(ast, env);
++    const result = await eval_ast(ast, env);
+     if (!isSeq(result)) {
+       throw new Error(`Not a function ${result}`);
+     }
+@@ -276,34 +270,33 @@
+       env = fn.newEnv(args);
+       continue loop;
+     }
+-    return fn.func(...args);
++    return await fn.func(...args);
+   }
+ 
+ }
+ const READ = (str: string): any => readStr(str);
+ const EVAL = (ast: any, _env?: any): any => eval_mal(ast, _env);
+ const PRINT = (exp: any): string => pr_str_antlr(exp)
+-const rep = (str: string): string => PRINT(EVAL(READ(str), rootEnv));
++const rep = async  (str: string): Promise<string> => PRINT(await EVAL(READ(str), rootEnv));
+ 
+ 
+ 
+ rl.setPrompt('user> ');
+ 
+-const repl = () => {
++const repl = async () => {
+   rl.prompt()
+   rl.on('line', async (line) => {
+     if (line.length === 0) {
+       rl.close();
+     }
+-    appendFileSync(".history", line + "\n", { encoding: "utf8" });
+     try {
+-      console.log(rep(line));
++      console.log(await rep(line));
+     } catch (e) {
+       console.log("Error", PRINT(e));
+     }
+     rl.prompt();
+   }).on('close', () => {
+-    process.exit(0);
++    //process.exit(0);
+   });
+ 
+ 
+@@ -330,6 +323,7 @@
+ rep('(def! x {:a 1 :b 2})')
+ rep('(try* xyz)')
+ rep('(def! *host-language* "Deno")')
++rep(`(def! s (str {:abc "val1" :def "val2"}))`)
+ const args = parseArgs(
+   Deno.args,
+ 
+Index: ../deno/deno.lock
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>{\n  \"version\": \"3\",\n  \"packages\": {\n    \"specifiers\": {\n      \"jsr:@std/cli@^1.0.1\": \"jsr:@std/cli@1.0.1\"\n    },\n    \"jsr\": {\n      \"@std/cli@1.0.1\": {\n        \"integrity\": \"d0661fba13b30e3c0121646589fa9beeeabe92482c6b04679ea0e7ec683d97f2\"\n      }\n    }\n  },\n  \"remote\": {},\n  \"workspace\": {\n    \"dependencies\": [\n      \"jsr:@std/cli@^1.0.1\"\n    ]\n  }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/../deno/deno.lock b/../deno/deno.lock
+--- a/../deno/deno.lock	(revision aca0b58da07847c2bb872827d75c400ade4be369)
++++ b/../deno/deno.lock	(date 1722426543314)
+@@ -2,12 +2,75 @@
+   "version": "3",
+   "packages": {
+     "specifiers": {
+-      "jsr:@std/cli@^1.0.1": "jsr:@std/cli@1.0.1"
++      "jsr:@std/cli@^1.0.1": "jsr:@std/cli@1.0.1",
++      "npm:ffi-napi": "npm:ffi-napi@4.0.3"
+     },
+     "jsr": {
+       "@std/cli@1.0.1": {
+         "integrity": "d0661fba13b30e3c0121646589fa9beeeabe92482c6b04679ea0e7ec683d97f2"
+       }
++    },
++    "npm": {
++      "debug@3.2.7": {
++        "integrity": "sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==",
++        "dependencies": {
++          "ms": "ms@2.1.2"
++        }
++      },
++      "debug@4.3.6": {
++        "integrity": "sha512-O/09Bd4Z1fBrU4VzkhFqVgpPzaGbw6Sm9FEkBT1A/YBXQFGuuSxa1dN2nxgxS34JmKXqYx8CZAwEVoJFImUXIg==",
++        "dependencies": {
++          "ms": "ms@2.1.2"
++        }
++      },
++      "ffi-napi@4.0.3": {
++        "integrity": "sha512-PMdLCIvDY9mS32RxZ0XGb95sonPRal8aqRhLbeEtWKZTe2A87qRFG9HjOhvG8EX2UmQw5XNRMIOT+1MYlWmdeg==",
++        "dependencies": {
++          "debug": "debug@4.3.6",
++          "get-uv-event-loop-napi-h": "get-uv-event-loop-napi-h@1.0.6",
++          "node-addon-api": "node-addon-api@3.2.1",
++          "node-gyp-build": "node-gyp-build@4.8.1",
++          "ref-napi": "ref-napi@3.0.3",
++          "ref-struct-di": "ref-struct-di@1.1.1"
++        }
++      },
++      "get-symbol-from-current-process-h@1.0.2": {
++        "integrity": "sha512-syloC6fsCt62ELLrr1VKBM1ggOpMdetX9hTrdW77UQdcApPHLmf7CI7OKcN1c9kYuNxKcDe4iJ4FY9sX3aw2xw==",
++        "dependencies": {}
++      },
++      "get-uv-event-loop-napi-h@1.0.6": {
++        "integrity": "sha512-t5c9VNR84nRoF+eLiz6wFrEp1SE2Acg0wS+Ysa2zF0eROes+LzOfuTaVHxGy8AbS8rq7FHEJzjnCZo1BupwdJg==",
++        "dependencies": {
++          "get-symbol-from-current-process-h": "get-symbol-from-current-process-h@1.0.2"
++        }
++      },
++      "ms@2.1.2": {
++        "integrity": "sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==",
++        "dependencies": {}
++      },
++      "node-addon-api@3.2.1": {
++        "integrity": "sha512-mmcei9JghVNDYydghQmeDX8KoAm0FAiYyIcUt/N4nhyAipB17pllZQDOJD2fotxABnt4Mdz+dKTO7eftLg4d0A==",
++        "dependencies": {}
++      },
++      "node-gyp-build@4.8.1": {
++        "integrity": "sha512-OSs33Z9yWr148JZcbZd5WiAXhh/n9z8TxQcdMhIOlpN9AhWpLfvVFO73+m77bBABQMaY9XSvIa+qk0jlI7Gcaw==",
++        "dependencies": {}
++      },
++      "ref-napi@3.0.3": {
++        "integrity": "sha512-LiMq/XDGcgodTYOMppikEtJelWsKQERbLQsYm0IOOnzhwE9xYZC7x8txNnFC9wJNOkPferQI4vD4ZkC0mDyrOA==",
++        "dependencies": {
++          "debug": "debug@4.3.6",
++          "get-symbol-from-current-process-h": "get-symbol-from-current-process-h@1.0.2",
++          "node-addon-api": "node-addon-api@3.2.1",
++          "node-gyp-build": "node-gyp-build@4.8.1"
++        }
++      },
++      "ref-struct-di@1.1.1": {
++        "integrity": "sha512-2Xyn/0Qgz89VT+++WP0sTosdm9oeowLP23wRJYhG4BFdMUrLj3jhwHZNEytYNYgtPKLNTP3KJX4HEgBvM1/Y2g==",
++        "dependencies": {
++          "debug": "debug@3.2.7"
++        }
++      }
+     }
+   },
+   "remote": {},
+Index: ../deno/step9_try.ts
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import { readStr } from \"./reader.ts\";\nimport { pr_str_antlr } from \"./printer.ts\";\nimport { Env } from \"./env.ts\";\nimport { FunctionType, VectorType, type TispType, Node, ListType, isSeq, NumberType, True, False, equals, Nil, StringType, SymbolType, HashMapType } from \"./types.ts\";\nimport { ns } from \"./core.ts\";\nimport { parseArgs } from \"@std/cli/parse-args\";\nimport * as readline from 'node:readline';\nimport { readFileSync, appendFileSync} from 'node:fs';\nimport { stdin as input, stdout as output } from 'node:process';\n\nlet history: string[] = [];\ntry {\n  history = readFileSync(\".history\", { encoding: \"utf8\" }).split(\"\\n\")\n\n} catch(e) {\n // console.log(e);\n}\nconst rl = readline.createInterface({ input, output, history });\n\n\nexport function isMacroCall(ast: TispType, env: Env) {\n  if (ast.type !== Node.List) {\n    return false;\n  }\n  const [first, ...rest] = ast.elements;\n  if (first.type !== Node.Symbol) {\n    return false;\n  }\n  const value = env.get(first.value);\n  return value && value.type === Node.Function && (value as FunctionType).is_macro;\n}\n\nfunction macroexpand(ast: TispType, env: Env): TispType {\n  while (isMacroCall(ast, env)) {\n    if (ast.type !== Node.List) {\n      throw new Error(`Expected list but got ${ast}`);\n    }\n    const [first, ...rest] = ast.elements;\n    if (first.type !== Node.Symbol) {\n      throw new Error(`Expected symbol but got ${first}`);\n    }\n    const value = env.get(first.value);\n    if (!value) {\n      throw new Error(`${first.value} not found`);\n    }\n    if (value.type !== Node.Function) {\n      throw new Error(`Expected function but got ${value}`);\n    }\n    const fn = value as FunctionType;\n    ast = fn.func(...rest);\n  }\n  return ast;\n}\nfunction starts_with(lst: TispType[], sym: string): boolean {\n  if (lst.length == 2) {\n    let a0 = lst[0]\n    switch (a0.type) {\n      case Node.Symbol:\n        return a0.value === sym;\n    }\n  }\n  return false;\n}\n\nfunction qq_loop(elt: TispType, acc: ListType): ListType {\n  if (elt.type == Node.List && starts_with(elt.elements, \"splice-unquote\")) {\n    return new ListType([SymbolType.get(\"concat\"), elt.elements[1], acc]);\n  } else {\n    return new ListType([SymbolType.get(\"cons\"), quasiquote(elt), acc]);\n  }\n}\n\nfunction qq_foldr(xs: TispType[]): ListType {\n  let acc = new ListType([])\n  for (let i = xs.length - 1; 0 <= i; i -= 1) {\n    acc = qq_loop(xs[i], acc)\n  }\n  return acc;\n}\n\nfunction quasiquote(ast: TispType): TispType {\n  switch (ast.type) {\n    case Node.Symbol:\n      return new ListType([SymbolType.get(\"quote\"), ast]);\n    case Node.HashMap:\n      return new ListType([SymbolType.get(\"quote\"), ast]);\n    case Node.List:\n      if (starts_with(ast.elements, \"unquote\")) {\n        return ast.elements[1];\n      } else {\n        return qq_foldr(ast.elements);\n      }\n    case Node.Vector:\n      return new ListType([SymbolType.get(\"vec\"), qq_foldr(ast.elements)]);\n    default:\n      return ast;\n  }\n}\n\nconst eval_ast = (ast: TispType, env: Env): TispType => {\n  switch (ast.type) {\n    case Node.Symbol:\n      const value = env.get(ast.value);\n      if (!value) {\n        throw new Error(`${ast.toString()} not found`)\n      }\n      return value;\n    case Node.List:\n      return new ListType(ast.elements.map(node => eval_mal(node, env)));\n    case Node.Vector:\n      return new VectorType(ast.elements.map(node => eval_mal(node, env)));\n    case Node.HashMap:\n      const list: TispType[] = [];\n      for (const [key, value] of ast.entries()) {\n        list.push(key);\n        list.push(eval_mal(value, env));\n      }\n      return new HashMapType(list);\n    default:\n      return ast;\n  }\n}\n\nconst eval_mal = (ast: TispType, env: Env): any => {\n  loop:\n  while (true) {\n    if (ast.type !== Node.List) {\n      return eval_ast(ast, env);\n    }\n    if (ast.elements.length < 1) {\n      return ast;\n    }\n\n    ast = macroexpand(ast, env);\n    if (!isSeq(ast)) {\n      return eval_ast(ast, env);\n    }\n    if (ast.elements.length < 1) {\n      return ast;\n    }\n\n    // Check if special form\n    const [firstParam, ...rest] = ast.elements\n    switch (firstParam.type) {\n      case Node.Symbol:\n        switch (firstParam.value) {\n          case 'def!': {\n            const [key, value] = rest;\n            if (key.type !== Node.Symbol) {\n              throw new Error(`Expected ident but got ${key}`);\n            }\n            if (!value) {\n              throw new Error(`Expected value but got ${value}`);\n            }\n            const evalValue = eval_mal(value, env);\n            env.set(key.value, evalValue);\n            return evalValue;\n          }\n          case 'let*': {\n            const [bindings, body] = rest;\n            if (!isSeq(bindings)) {\n              throw new Error(`Expected vector but got ${bindings}`);\n            }\n            env = new Env(env);\n            for (let i = 0; i < bindings.elements.length; i += 2) {\n              if (bindings.elements[i].type !== Node.Symbol) {\n                throw new Error(`Expected ident but got ${bindings.elements[i]}`);\n              }\n              env.set(bindings.elements[i].value, eval_mal(bindings.elements[i + 1], env));\n            }\n            ast = body;\n            continue loop;\n          }\n          case 'do': {\n            if (rest.length < 1) {\n              return Nil;\n            }\n            const lastElement = rest.pop()!;\n            rest.map(node => eval_mal(node, env));\n            ast = lastElement;\n            continue loop;\n          }\n          case 'if': {\n            const [condition, trueBranch, falseBranch] = rest\n            const evalCondition = eval_mal(condition, env);\n            if (!equals(evalCondition, False) && !equals(evalCondition, Nil)) {\n              ast = trueBranch;\n            } else {\n              if (!falseBranch) {\n                ast = Nil;\n              } else {\n                ast = falseBranch;\n              }\n            }\n            continue loop;\n          }\n          case 'fn*': {\n            const [params, body] = rest;\n            if (!isSeq(params)) {\n              throw new Error(`Expected vector but got ${params}`);\n            }\n            return FunctionType.fromAst(eval_mal, env, params.elements.map(e => {\n              if(e.type !== Node.Symbol) {\n                throw new Error(`Expected symbol but got ${e}`);\n              }\n              return e.value;\n            }), body);\n          }\n          case 'quote': {\n            if (rest.length !== 1) {\n              throw new Error(`quote expects 1 argument, got ${rest.length}`);\n            }\n            return rest[0];\n          }\n          case 'quasiquote': {\n            if (rest.length !== 1) {\n              throw new Error(`quasiquote expects 1 argument, got ${rest.length}`);\n            }\n            ast = quasiquote(rest[0]);\n            continue loop;\n          }\n          case 'quasiquoteexpand': {\n            return quasiquote(rest[0]);\n          }\n          case 'defmacro!': {\n            const [key, value] = rest;\n            if (key.type !== Node.Symbol) {\n              throw new Error(`Expected ident but got ${key}`);\n            }\n            const evalValue = eval_mal(value, env);\n\n            env.set(key.value, evalValue.toMacro());\n            return evalValue;\n          }\n          case 'macroexpand': {\n            return macroexpand(rest[0], env);\n          }\n          case 'try*': {\n            const [tryBody, catchNode] = rest;\n            try {\n              return eval_mal(tryBody, env);\n            } catch (e) {\n              if (catchNode && catchNode.type === Node.List) {\n                const [catchSym, err, catchBody] = catchNode.elements;\n                if (catchSym.value !== \"catch*\") {\n                  throw new Error(`Expected catch but got ${catchSym}`);\n                }\n                if (err.type !== Node.Symbol) {\n                  throw new Error(`Expected symbol but got ${err}`);\n                }\n                return eval_mal(catchBody, new Env(env, [err.value], [e]));\n              }\n              return e;\n            }\n          }\n        }\n    }\n    // ...\n\n\n    // otherwise Evaluate the function\n    const result = eval_ast(ast, env);\n    if (!isSeq(result)) {\n      throw new Error(`Not a function ${result}`);\n    }\n    const [fn, ...args] = result.elements\n    if (fn.type !== Node.Function) {\n      throw new Error(`Not a function ${fn}`);\n    }\n    if (fn.body) {\n      ast = fn.body;\n      env = fn.newEnv(args);\n      continue loop;\n    }\n    return fn.func(...args);\n  }\n\n}\nconst READ = (str: string): any => readStr(str);\nconst EVAL = (ast: any, _env?: any): any => eval_mal(ast, _env);\nconst PRINT = (exp: any): string => pr_str_antlr(exp)\nconst rep = (str: string): string => PRINT(EVAL(READ(str), rootEnv));\n\n\n\nrl.setPrompt('user> ');\n\nconst repl = () => {\n  rl.prompt()\n  rl.on('line', async (line) => {\n    if (line.length === 0) {\n      rl.close();\n    }\n    appendFileSync(\".history\", line + \"\\n\", { encoding: \"utf8\" });\n    try {\n      console.log(rep(line));\n    } catch (e) {\n      console.log(\"Error\", PRINT(e));\n    }\n    rl.prompt();\n  }).on('close', () => {\n    process.exit(0);\n  });\n\n\n}\n\nconst rootEnv = new Env();\nObject.entries(ns).map(([key, value]) => {\n  rootEnv.set(key, value);\n})\nrootEnv.set(\"eval\", FunctionType.fromBootstrap((ast: TispType) => {\n  if (!ast) {\n    throw new Error(\"Cannot eval nil\");\n  }\n  const res = eval_mal(ast, rootEnv);\n\n  return res;\n}));\n\nrep('(def! not (fn* (a) (if a false true)))')\n// load-file\nrep(`(def! load-file (fn* (f) (eval (read-string (str \"(do \" (slurp f) \"\\nnil)\")))))`)\nrep(`(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw \"odd number of forms to cond\")) (cons 'cond (rest (rest xs)))))))`)\nrep(`(defmacro! id (fn* (x) x))`)\nrep('(def! x {:a 1 :b 2})')\nrep('(try* xyz)')\nconst args = parseArgs(\n  Deno.args,\n\n)\n\n// const [_, __, ...args] = positionals;\n\nif (args._.length > 0) {\n  // Read the file\n  const [filename, ...rest] = args._;\n  rootEnv.set(\"*ARGV*\", new ListType(rest.map(a => new StringType(a))));\n  rep(`(load-file \"${filename}\")`);\n} else {\n  rootEnv.set(\"*ARGV*\", new ListType([]));\n  // Add eval to rootEnv\n  repl();\n\n}\n\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/../deno/step9_try.ts b/../deno/step9_try.ts
+--- a/../deno/step9_try.ts	(revision aca0b58da07847c2bb872827d75c400ade4be369)
++++ b/../deno/step9_try.ts	(date 1722341937071)
+@@ -4,18 +4,7 @@
+ import { FunctionType, VectorType, type TispType, Node, ListType, isSeq, NumberType, True, False, equals, Nil, StringType, SymbolType, HashMapType } from "./types.ts";
+ import { ns } from "./core.ts";
+ import { parseArgs } from "@std/cli/parse-args";
+-import * as readline from 'node:readline';
+-import { readFileSync, appendFileSync} from 'node:fs';
+-import { stdin as input, stdout as output } from 'node:process';
+-
+-let history: string[] = [];
+-try {
+-  history = readFileSync(".history", { encoding: "utf8" }).split("\n")
+-
+-} catch(e) {
+- // console.log(e);
+-}
+-const rl = readline.createInterface({ input, output, history });
++import { rl } from "./readline.ts";
+ 
+ 
+ export function isMacroCall(ast: TispType, env: Env) {
+@@ -30,7 +19,7 @@
+   return value && value.type === Node.Function && (value as FunctionType).is_macro;
+ }
+ 
+-function macroexpand(ast: TispType, env: Env): TispType {
++async function macroexpand(ast: TispType, env: Env): TispType {
+   while (isMacroCall(ast, env)) {
+     if (ast.type !== Node.List) {
+       throw new Error(`Expected list but got ${ast}`);
+@@ -47,7 +36,7 @@
+       throw new Error(`Expected function but got ${value}`);
+     }
+     const fn = value as FunctionType;
+-    ast = fn.func(...rest);
++    ast = await fn.func(...rest);
+   }
+   return ast;
+ }
+@@ -97,7 +86,7 @@
+   }
+ }
+ 
+-const eval_ast = (ast: TispType, env: Env): TispType => {
++const eval_ast = async (ast: TispType, env: Env): Promise<TispType> => {
+   switch (ast.type) {
+     case Node.Symbol:
+       const value = env.get(ast.value);
+@@ -106,14 +95,14 @@
+       }
+       return value;
+     case Node.List:
+-      return new ListType(ast.elements.map(node => eval_mal(node, env)));
++      return new ListType(await Promise.all(ast.elements.map( (node) =>  eval_mal(node, env))));
+     case Node.Vector:
+-      return new VectorType(ast.elements.map(node => eval_mal(node, env)));
++      return new VectorType(await Promise.all(ast.elements.map( (node) =>  eval_mal(node, env))));
+     case Node.HashMap:
+       const list: TispType[] = [];
+       for (const [key, value] of ast.entries()) {
+         list.push(key);
+-        list.push(eval_mal(value, env));
++        list.push( await eval_mal(value, env));
+       }
+       return new HashMapType(list);
+     default:
+@@ -121,185 +110,193 @@
+   }
+ }
+ 
+-const eval_mal = (ast: TispType, env: Env): any => {
++const eval_mal = async (ast: TispType, env: Env): Promise<TispType> => {
+   loop:
+-  while (true) {
+-    if (ast.type !== Node.List) {
+-      return eval_ast(ast, env);
+-    }
+-    if (ast.elements.length < 1) {
+-      return ast;
+-    }
++    while (true) {
++      if (ast.type !== Node.List) {
++        return await eval_ast(ast, env);
++      }
++      if (ast.elements.length < 1) {
++        return ast;
++      }
+ 
+-    ast = macroexpand(ast, env);
+-    if (!isSeq(ast)) {
+-      return eval_ast(ast, env);
+-    }
+-    if (ast.elements.length < 1) {
+-      return ast;
+-    }
++      ast = await macroexpand(ast, env);
++      if (!isSeq(ast)) {
++        return await eval_ast(ast, env);
++      }
++      if (ast.elements.length < 1) {
++        return ast;
++      }
+ 
+-    // Check if special form
+-    const [firstParam, ...rest] = ast.elements
+-    switch (firstParam.type) {
+-      case Node.Symbol:
+-        switch (firstParam.value) {
+-          case 'def!': {
+-            const [key, value] = rest;
+-            if (key.type !== Node.Symbol) {
+-              throw new Error(`Expected ident but got ${key}`);
+-            }
+-            if (!value) {
+-              throw new Error(`Expected value but got ${value}`);
+-            }
+-            const evalValue = eval_mal(value, env);
+-            env.set(key.value, evalValue);
+-            return evalValue;
+-          }
+-          case 'let*': {
+-            const [bindings, body] = rest;
+-            if (!isSeq(bindings)) {
+-              throw new Error(`Expected vector but got ${bindings}`);
+-            }
+-            env = new Env(env);
+-            for (let i = 0; i < bindings.elements.length; i += 2) {
+-              if (bindings.elements[i].type !== Node.Symbol) {
+-                throw new Error(`Expected ident but got ${bindings.elements[i]}`);
+-              }
+-              env.set(bindings.elements[i].value, eval_mal(bindings.elements[i + 1], env));
+-            }
+-            ast = body;
+-            continue loop;
+-          }
+-          case 'do': {
+-            if (rest.length < 1) {
+-              return Nil;
+-            }
+-            const lastElement = rest.pop()!;
+-            rest.map(node => eval_mal(node, env));
+-            ast = lastElement;
+-            continue loop;
+-          }
+-          case 'if': {
+-            const [condition, trueBranch, falseBranch] = rest
+-            const evalCondition = eval_mal(condition, env);
+-            if (!equals(evalCondition, False) && !equals(evalCondition, Nil)) {
+-              ast = trueBranch;
+-            } else {
+-              if (!falseBranch) {
+-                ast = Nil;
+-              } else {
+-                ast = falseBranch;
+-              }
+-            }
+-            continue loop;
+-          }
+-          case 'fn*': {
+-            const [params, body] = rest;
+-            if (!isSeq(params)) {
+-              throw new Error(`Expected vector but got ${params}`);
+-            }
+-            return FunctionType.fromAst(eval_mal, env, params.elements.map(e => {
+-              if(e.type !== Node.Symbol) {
+-                throw new Error(`Expected symbol but got ${e}`);
+-              }
+-              return e.value;
+-            }), body);
+-          }
+-          case 'quote': {
+-            if (rest.length !== 1) {
+-              throw new Error(`quote expects 1 argument, got ${rest.length}`);
+-            }
+-            return rest[0];
+-          }
+-          case 'quasiquote': {
+-            if (rest.length !== 1) {
+-              throw new Error(`quasiquote expects 1 argument, got ${rest.length}`);
+-            }
+-            ast = quasiquote(rest[0]);
+-            continue loop;
+-          }
+-          case 'quasiquoteexpand': {
+-            return quasiquote(rest[0]);
+-          }
+-          case 'defmacro!': {
+-            const [key, value] = rest;
+-            if (key.type !== Node.Symbol) {
+-              throw new Error(`Expected ident but got ${key}`);
+-            }
+-            const evalValue = eval_mal(value, env);
++      // Check if special form
++      const [firstParam, ...rest] = ast.elements
++      switch (firstParam.type) {
++        case Node.Symbol:
++          switch (firstParam.value) {
++            case 'def!': {
++              const [key, value] = rest;
++              if (key.type !== Node.Symbol) {
++                throw new Error(`Expected ident but got ${key}`);
++              }
++              if (!value) {
++                throw new Error(`Expected value but got ${value}`);
++              }
++              const evalValue = await eval_mal(value, env);
++              env.set(key.value, evalValue);
++              return evalValue;
++            }
++            case 'let*': {
++              const [bindings, body] = rest;
++              if (!isSeq(bindings)) {
++                throw new Error(`Expected vector but got ${bindings}`);
++              }
++              env = new Env(env);
++              for (let i = 0; i < bindings.elements.length; i += 2) {
++                if (bindings.elements[i].type !== Node.Symbol) {
++                  throw new Error(`Expected ident but got ${bindings.elements[i]}`);
++                }
++                env.set(bindings.elements[i].value, await eval_mal(bindings.elements[i + 1], env));
++              }
++              ast = body;
++              continue loop;
++            }
++            case 'do': {
++              if (rest.length < 1) {
++                return Nil;
++              }
++              const lastElement = rest.pop()!;
++              rest.map(node => eval_mal(node, env));
++              ast = lastElement;
++              continue loop;
++            }
++            case 'if': {
++              const [condition, trueBranch, falseBranch] = rest
++              const evalCondition = await eval_mal(condition, env);
++              if (!equals(evalCondition, False) && !equals(evalCondition, Nil)) {
++                ast = trueBranch;
++              } else {
++                if (!falseBranch) {
++                  ast = Nil;
++                } else {
++                  ast = falseBranch;
++                }
++              }
++              continue loop;
++            }
++            case 'fn*': {
++              const [params, body] = rest;
++              if (!isSeq(params)) {
++                throw new Error(`Expected vector but got ${params}`);
++              }
++              return FunctionType.fromAst(eval_mal, env, params.elements.map(e => {
++                if(e.type !== Node.Symbol) {
++                  throw new Error(`Expected symbol but got ${e}`);
++                }
++                return e.value;
++              }), body);
++            }
++            case 'quote': {
++              if (rest.length !== 1) {
++                throw new Error(`quote expects 1 argument, got ${rest.length}`);
++              }
++              return rest[0];
++            }
++            case 'quasiquote': {
++              if (rest.length !== 1) {
++                throw new Error(`quasiquote expects 1 argument, got ${rest.length}`);
++              }
++              ast = quasiquote(rest[0]);
++              continue loop;
++            }
++            case 'quasiquoteexpand': {
++              return quasiquote(rest[0]);
++            }
++            case 'defmacro!': {
++              const [key, value] = rest;
++              if (key.type !== Node.Symbol) {
++                throw new Error(`Expected ident but got ${key}`);
++              }
++              const evalValue = await eval_mal(value, env);
+ 
+-            env.set(key.value, evalValue.toMacro());
+-            return evalValue;
+-          }
+-          case 'macroexpand': {
+-            return macroexpand(rest[0], env);
+-          }
+-          case 'try*': {
+-            const [tryBody, catchNode] = rest;
+-            try {
+-              return eval_mal(tryBody, env);
+-            } catch (e) {
+-              if (catchNode && catchNode.type === Node.List) {
+-                const [catchSym, err, catchBody] = catchNode.elements;
+-                if (catchSym.value !== "catch*") {
+-                  throw new Error(`Expected catch but got ${catchSym}`);
+-                }
+-                if (err.type !== Node.Symbol) {
+-                  throw new Error(`Expected symbol but got ${err}`);
+-                }
+-                return eval_mal(catchBody, new Env(env, [err.value], [e]));
+-              }
+-              return e;
++              env.set(key.value, evalValue.toMacro());
++              return evalValue;
++            }
++            case 'macroexpand': {
++              return macroexpand(rest[0], env);
++            }
++            case 'try*': {
++              const [tryBody, catchNode] = rest;
++              try {
++                return await eval_mal(tryBody, env);
++              } catch (e) {
++                if (catchNode && catchNode.type === Node.List) {
++                  const [catchSym, err, catchBody] = catchNode.elements;
++                  if (catchSym.value !== "catch*") {
++                    throw new Error(`Expected catch but got ${catchSym}`);
++                  }
++                  if (err.type !== Node.Symbol) {
++                    throw new Error(`Expected symbol but got ${err}`);
++                  }
++                  return await eval_mal(catchBody, new Env(env, [err.value], [e]));
++                }
++                return e;
++              }
+             }
+-          }
+-        }
+-    }
+-    // ...
++            case '___': {
++              console.log(env)
++              return Nil
++            }
++            case 'await': {
++              const [expr] = rest;
++              return await eval_mal(expr, env);
++
++            }
++          }
++      }
++      // ...
+ 
+ 
+-    // otherwise Evaluate the function
+-    const result = eval_ast(ast, env);
+-    if (!isSeq(result)) {
+-      throw new Error(`Not a function ${result}`);
+-    }
+-    const [fn, ...args] = result.elements
+-    if (fn.type !== Node.Function) {
+-      throw new Error(`Not a function ${fn}`);
+-    }
+-    if (fn.body) {
+-      ast = fn.body;
+-      env = fn.newEnv(args);
+-      continue loop;
+-    }
+-    return fn.func(...args);
+-  }
++      // otherwise Evaluate the function
++      const result = await eval_ast(ast, env);
++      if (!isSeq(result)) {
++        throw new Error(`Not a function ${result}`);
++      }
++      const [fn, ...args] = result.elements
++      if (fn.type !== Node.Function) {
++        throw new Error(`Not a function ${fn}`);
++      }
++      if (fn.body) {
++        ast = fn.body;
++        env = fn.newEnv(args);
++        continue loop;
++      }
++      return await fn.func(...args);
++    }
+ 
+ }
+ const READ = (str: string): any => readStr(str);
+ const EVAL = (ast: any, _env?: any): any => eval_mal(ast, _env);
+ const PRINT = (exp: any): string => pr_str_antlr(exp)
+-const rep = (str: string): string => PRINT(EVAL(READ(str), rootEnv));
++const rep = async  (str: string): Promise<string> => PRINT(await EVAL(READ(str), rootEnv));
+ 
+ 
+ 
+ rl.setPrompt('user> ');
+ 
+-const repl = () => {
++const repl = async () => {
+   rl.prompt()
+   rl.on('line', async (line) => {
+     if (line.length === 0) {
+       rl.close();
+     }
+-    appendFileSync(".history", line + "\n", { encoding: "utf8" });
+     try {
+-      console.log(rep(line));
++      console.log(await rep(line));
+     } catch (e) {
+       console.log("Error", PRINT(e));
+     }
+     rl.prompt();
+   }).on('close', () => {
+-    process.exit(0);
++    //process.exit(0);
+   });
+ 
+ 
+@@ -322,9 +319,8 @@
+ // load-file
+ rep(`(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))`)
+ rep(`(defmacro! cond (fn* (& xs) (if (> (count xs) 0) (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw "odd number of forms to cond")) (cons 'cond (rest (rest xs)))))))`)
+-rep(`(defmacro! id (fn* (x) x))`)
+-rep('(def! x {:a 1 :b 2})')
+-rep('(try* xyz)')
++rep('(def! *host-language* "Deno")')
++
+ const args = parseArgs(
+   Deno.args,
+ 
+Index: ../deno/.history
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>(+ 1 1)\n(+ 1 1)\n(+ 1 1)\n(def! x 1)\nx\n(def! x (fn* [a] (+ a a)))\nx\n(x 10)\n(def! x (fn* (a) (+ a a)))\n(def! x (fn* [a] (+ a a)))\n(x 1)\n(def! x (fn* [a] (+ a a)))\n(x 10)\n(def! x (fn* [a] (+ a a)))\n(def! x (fn* [a] (+ a a)))\n(x 10)\n(x 10)\n(x 10)\n(x \"asd\")\n(throw \"err1\")\n(try* 123 (catch* e 456))\n(try* abc (catch* exc (prn \"exc is:\" exc)))\n(try* (abc 1 2) (catch* exc (prn \"exc is:\" exc)))\n(try* (nth () 1) (catch* exc (prn \"exc is:\" exc)))\n(try* (throw \"my exception\") (catch* exc (do (prn \"exc:\" exc) 7)))\n(try* (do (try* \"t1\" (catch* e \"c1\")) (throw \"e1\")) (catch* e \"c2\"))\n(try* (try* (throw \"e1\") (catch* e (throw \"e2\"))) (catch* e \"c2\"))\n(try* (map throw (list \"my err\")) (catch* exc exc))\n(symbol? 'abc)\n(symbol? \"abc\")\n(nil? nil)\n(nil? true)\n(true? true)\n(true? false)\n(true? true?)\n(false? false)\n(false? true)\n(apply + (list 2 3))\n(apply + 4 (list 5))\n(apply prn (list 1 2 \"3\" (list)))\n(apply prn 1 2 (list \"3\" (list)))\n(apply list (list))\n(apply symbol? (list (quote two)))\n(apply (fn* (a b) (+ a b)) (list 2 3))\n(apply (fn* (a b) (+ a b)) 4 (list 5))\n(def! nums (list 1 2 3))\n(def! double (fn* (a) (* 2 a)))\n(double 3)\n(map double nums) \n(map (fn* (x) (symbol? x)) (list 1 (quote two) \"three\"))\n(= () (map str ()))\n(symbol? :abc)\n(symbol? 'abc)\n(symbol? \"abc\")\n(symbol? (symbol \"abc\"))\n(keyword? :abc)\n(keyword? 'abc)\n(keyword? \"abc\")\n(keyword? \"\")\n(keyword? (keyword \"abc\"))\n(symbol \"abc\")\n(keyword \"abc\")\n(sequential? (list 1 2 3))\n(sequential? [15])\n(sequential? sequential?)\n(sequential? nil)\n(sequential? \"abc\")\n(apply + 4 [5])\n(apply prn 1 2 [\"3\" 4])\n(apply list [])\n(apply (fn* (a b) (+ a b)) [2 3])\n(apply (fn* (a b) (+ a b)) 4 [5])\n(map (fn* (a) (* 2 a)) [1 2 3])\n(map (fn* [& args] (list? args)) [1 2])\n(vector? [10 11])\n(vector? '(12 13))\n(vector 3 4 5)\n(= [] (vector))\n(map? {})\n(map? '())\n(map? [])\n(map? 'abc)\n(map? :abc)\n(hash-map \"a\" 1)\n{\"a\" 1}\n(assoc {} \"a\" 1)\n(get (assoc (assoc {\"a\" 1 } \"b\" 2) \"c\" 3) \"a\")\n(def! hm1 (hash-map))\n(map? hm1)\n(map? 1)\n(map? \"abc\")\n(get nil \"a\")\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(def! hm2 (assoc hm1 \"a\" 1))\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(get hm2 \"a\")\n(contains? hm2 \"a\")\n(keys hm1)\n(= () (keys hm1))\n(keys hm2)\n(keys {\"1\" 1})\n(vals hm1)\n(= () (vals hm1))\n(vals hm2)\n(count (keys (assoc hm2 \"b\" 2 \"c\" 3)))\n(get {:abc 123} :abc)\n(contains? {:abc 123} :abc)\n(contains? {:abcd 123} :abc)\n(assoc {} :bcd 234)\n(keyword? (nth (keys {:abc 123 :def 456}) 0))\n(keyword? (nth (vals {\"a\" :abc \"b\" :def}) 0))\n(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))\n(get hm4 :a)\n(get hm4 :b)\n(get hm4 :c)\n(contains? {:abc nil} :abc)\n(assoc {} :bcd nil)\n(str \"A\" {:abc \"val\"} \"Z\")\n(str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(pr-str \"A\" {:abc \"val\"} \"Z\")\n(pr-str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(def! s (str {:abc \"val1\" :def \"val2\"}))\n(cond (= s \"{:abc val1 :def val2}\") true (= s \"{:def val2 :abc val1}\") true)\n(def! p (pr-str {:abc \"val1\" :def \"val2\"}))\n(cond (= p \"{:abc \\\"val1\\\" :def \\\"val2\\\"}\") true (= p \"{:def \\\"val2\\\" :abc \\\"val1\\\"}\") true)\n(apply (fn* (& more) (list? more)) [1 2 3])\n(apply (fn* (& more) (list? more)) [])\n(apply (fn* (a & more) (list? more)) [1])\n(throw {:msg \"err2\"})\n(try* xyz)\n(try* (throw (list 1 2 3)) (catch* exc (do (prn \"err:\" exc) 7)))\n(def! hm3 (assoc hm2 \"b\" 2))\n(count (keys hm3))\n(count (vals hm3))\n(dissoc hm3 \"a\")\n(dissoc hm3 \"a\" \"b\")\n(dissoc hm3 \"a\" \"b\" \"c\")\n(count (keys hm3))\n(dissoc {:cde 345 :fgh 456} :cde)\n(dissoc {:cde nil :fgh 456} :cde)\n(= {} {})\n(= {} (hash-map))\n(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n(= {:a 11 :b 22} (hash-map :a 11))\n(= {:a [11 22]} {:a (list 11 22)})\n(= {:a 11 :b 22} (list :a 11 :b 22))\n(= {} [])\n(= [] {})\n(keyword :abc)\n(keyword? (first (keys {\":abc\" 123 \":def\" 456})))\n(def! bar (fn* [a] {:foo (get a :foo)}))\n(bar {:foo (fn* [x] x)})\n(bar {:foo 3})\n(throw \"err1\")\n(try* 123 (catch* e 456))\n(try* abc (catch* exc (prn \"exc is:\" exc)))\n(try* (abc 1 2) (catch* exc (prn \"exc is:\" exc)))\n(try* (nth () 1) (catch* exc (prn \"exc is:\" exc)))\n(try* (throw \"my exception\") (catch* exc (do (prn \"exc:\" exc) 7)))\n(try* (do (try* \"t1\" (catch* e \"c1\")) (throw \"e1\")) (catch* e \"c2\"))\n(try* (try* (throw \"e1\") (catch* e (throw \"e2\"))) (catch* e \"c2\"))\n(try* (map throw (list \"my err\")) (catch* exc exc))\n(symbol? 'abc)\n(symbol? \"abc\")\n(nil? nil)\n(nil? true)\n(true? true)\n(true? false)\n(true? true?)\n(false? false)\n(false? true)\n(apply + (list 2 3))\n(apply + 4 (list 5))\n(apply prn (list 1 2 \"3\" (list)))\n(apply prn 1 2 (list \"3\" (list)))\n(apply list (list))\n(apply symbol? (list (quote two)))\n(apply (fn* (a b) (+ a b)) (list 2 3))\n(apply (fn* (a b) (+ a b)) 4 (list 5))\n(def! nums (list 1 2 3))\n(def! double (fn* (a) (* 2 a)))\n(double 3)\n(map double nums) \n(map (fn* (x) (symbol? x)) (list 1 (quote two) \"three\"))\n(= () (map str ()))\n(symbol? :abc)\n(symbol? 'abc)\n(symbol? \"abc\")\n(symbol? (symbol \"abc\"))\n(keyword? :abc)\n(keyword? 'abc)\n(keyword? \"abc\")\n(keyword? \"\")\n(keyword? (keyword \"abc\"))\n(symbol \"abc\")\n(keyword \"abc\")\n(sequential? (list 1 2 3))\n(sequential? [15])\n(sequential? sequential?)\n(sequential? nil)\n(sequential? \"abc\")\n(apply + 4 [5])\n(apply prn 1 2 [\"3\" 4])\n(apply list [])\n(apply (fn* (a b) (+ a b)) [2 3])\n(apply (fn* (a b) (+ a b)) 4 [5])\n(map (fn* (a) (* 2 a)) [1 2 3])\n(map (fn* [& args] (list? args)) [1 2])\n(vector? [10 11])\n(vector? '(12 13))\n(vector 3 4 5)\n(= [] (vector))\n(map? {})\n(map? '())\n(map? [])\n(map? 'abc)\n(map? :abc)\n(hash-map \"a\" 1)\n{\"a\" 1}\n(assoc {} \"a\" 1)\n(get (assoc (assoc {\"a\" 1 } \"b\" 2) \"c\" 3) \"a\")\n(def! hm1 (hash-map))\n(map? hm1)\n(map? 1)\n(map? \"abc\")\n(get nil \"a\")\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(def! hm2 (assoc hm1 \"a\" 1))\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(get hm2 \"a\")\n(contains? hm2 \"a\")\n(keys hm1)\n(= () (keys hm1))\n(keys hm2)\n(keys {\"1\" 1})\n(vals hm1)\n(= () (vals hm1))\n(vals hm2)\n(count (keys (assoc hm2 \"b\" 2 \"c\" 3)))\n(get {:abc 123} :abc)\n(contains? {:abc 123} :abc)\n(contains? {:abcd 123} :abc)\n(assoc {} :bcd 234)\n(keyword? (nth (keys {:abc 123 :def 456}) 0))\n(keyword? (nth (vals {\"a\" :abc \"b\" :def}) 0))\n(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))\n(get hm4 :a)\n(get hm4 :b)\n(get hm4 :c)\n(contains? {:abc nil} :abc)\n(assoc {} :bcd nil)\n(str \"A\" {:abc \"val\"} \"Z\")\n(str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(pr-str \"A\" {:abc \"val\"} \"Z\")\n(pr-str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(def! s (str {:abc \"val1\" :def \"val2\"}))\n(cond (= s \"{:abc val1 :def val2}\") true (= s \"{:def val2 :abc val1}\") true)\n(def! p (pr-str {:abc \"val1\" :def \"val2\"}))\n(cond (= p \"{:abc \\\"val1\\\" :def \\\"val2\\\"}\") true (= p \"{:def \\\"val2\\\" :abc \\\"val1\\\"}\") true)\n(apply (fn* (& more) (list? more)) [1 2 3])\n(apply (fn* (& more) (list? more)) [])\n(apply (fn* (a & more) (list? more)) [1])\n(throw {:msg \"err2\"})\n(try* xyz)\n(try* (throw (list 1 2 3)) (catch* exc (do (prn \"err:\" exc) 7)))\n(def! hm3 (assoc hm2 \"b\" 2))\n(count (keys hm3))\n(count (vals hm3))\n(dissoc hm3 \"a\")\n(dissoc hm3 \"a\" \"b\")\n(dissoc hm3 \"a\" \"b\" \"c\")\n(count (keys hm3))\n(dissoc {:cde 345 :fgh 456} :cde)\n(dissoc {:cde nil :fgh 456} :cde)\n(= {} {})\n(= {} (hash-map))\n(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n(= {:a 11 :b 22} (hash-map :a 11))\n(= {:a [11 22]} {:a (list 11 22)})\n(= {:a 11 :b 22} (list :a 11 :b 22))\n(= {} [])\n(= [] {})\n(keyword :abc)\n(keyword? (first (keys {\":abc\" 123 \":def\" 456})))\n(def! bar (fn* [a] {:foo (get a :foo)}))\n(bar {:foo (fn* [x] x)})\n(bar {:foo 3})\n(throw \"err1)\n(throw \"err1\")\n(throw \"err1\")\n(throw \"err1\")\n(throw \"err1\")\n(try* 123 (catch* e 456))\n(try* abc (catch* exc (prn \"exc is:\" exc)))\n(try* (abc 1 2) (catch* exc (prn \"exc is:\" exc)))\n(try* (nth () 1) (catch* exc (prn \"exc is:\" exc)))\n(try* (throw \"my exception\") (catch* exc (do (prn \"exc:\" exc) 7)))\n(try* (do (try* \"t1\" (catch* e \"c1\")) (throw \"e1\")) (catch* e \"c2\"))\n(try* (try* (throw \"e1\") (catch* e (throw \"e2\"))) (catch* e \"c2\"))\n(try* (map throw (list \"my err\")) (catch* exc exc))\n(symbol? 'abc)\n(symbol? \"abc\")\n(nil? nil)\n(nil? true)\n(true? true)\n(true? false)\n(true? true?)\n(false? false)\n(false? true)\n(apply + (list 2 3))\n(apply + 4 (list 5))\n(apply prn (list 1 2 \"3\" (list)))\n(apply prn 1 2 (list \"3\" (list)))\n(apply list (list))\n(apply symbol? (list (quote two)))\n(apply (fn* (a b) (+ a b)) (list 2 3))\n(apply (fn* (a b) (+ a b)) 4 (list 5))\n(def! nums (list 1 2 3))\n(def! double (fn* (a) (* 2 a)))\n(double 3)\n(map double nums) \n(map (fn* (x) (symbol? x)) (list 1 (quote two) \"three\"))\n(= () (map str ()))\n(symbol? :abc)\n(symbol? 'abc)\n(symbol? \"abc\")\n(symbol? (symbol \"abc\"))\n(keyword? :abc)\n(keyword? 'abc)\n(keyword? \"abc\")\n(keyword? \"\")\n(keyword? (keyword \"abc\"))\n(symbol \"abc\")\n(keyword \"abc\")\n(sequential? (list 1 2 3))\n(sequential? [15])\n(sequential? sequential?)\n(sequential? nil)\n(sequential? \"abc\")\n(apply + 4 [5])\n(apply prn 1 2 [\"3\" 4])\n(apply list [])\n(apply (fn* (a b) (+ a b)) [2 3])\n(apply (fn* (a b) (+ a b)) 4 [5])\n(map (fn* (a) (* 2 a)) [1 2 3])\n(map (fn* [& args] (list? args)) [1 2])\n(vector? [10 11])\n(vector? '(12 13))\n(vector 3 4 5)\n(= [] (vector))\n(map? {})\n(map? '())\n(map? [])\n(map? 'abc)\n(map? :abc)\n(hash-map \"a\" 1)\n{\"a\" 1}\n(assoc {} \"a\" 1)\n(get (assoc (assoc {\"a\" 1 } \"b\" 2) \"c\" 3) \"a\")\n(def! hm1 (hash-map))\n(map? hm1)\n(map? 1)\n(map? \"abc\")\n(get nil \"a\")\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(def! hm2 (assoc hm1 \"a\" 1))\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(get hm2 \"a\")\n(contains? hm2 \"a\")\n(keys hm1)\n(= () (keys hm1))\n(keys hm2)\n(keys {\"1\" 1})\n(vals hm1)\n(= () (vals hm1))\n(vals hm2)\n(count (keys (assoc hm2 \"b\" 2 \"c\" 3)))\n(get {:abc 123} :abc)\n(contains? {:abc 123} :abc)\n(contains? {:abcd 123} :abc)\n(assoc {} :bcd 234)\n(keyword? (nth (keys {:abc 123 :def 456}) 0))\n(keyword? (nth (vals {\"a\" :abc \"b\" :def}) 0))\n(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))\n(get hm4 :a)\n(get hm4 :b)\n(get hm4 :c)\n(contains? {:abc nil} :abc)\n(assoc {} :bcd nil)\n(str \"A\" {:abc \"val\"} \"Z\")\n(str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(pr-str \"A\" {:abc \"val\"} \"Z\")\n(pr-str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(def! s (str {:abc \"val1\" :def \"val2\"}))\n(cond (= s \"{:abc val1 :def val2}\") true (= s \"{:def val2 :abc val1}\") true)\n(def! p (pr-str {:abc \"val1\" :def \"val2\"}))\n(cond (= p \"{:abc \\\"val1\\\" :def \\\"val2\\\"}\") true (= p \"{:def \\\"val2\\\" :abc \\\"val1\\\"}\") true)\n(apply (fn* (& more) (list? more)) [1 2 3])\n(apply (fn* (& more) (list? more)) [])\n(apply (fn* (a & more) (list? more)) [1])\n(throw {:msg \"err2\"})\n(try* xyz)\n(try* (throw (list 1 2 3)) (catch* exc (do (prn \"err:\" exc) 7)))\n(def! hm3 (assoc hm2 \"b\" 2))\n(count (keys hm3))\n(count (vals hm3))\n(dissoc hm3 \"a\")\n(dissoc hm3 \"a\" \"b\")\n(dissoc hm3 \"a\" \"b\" \"c\")\n(count (keys hm3))\n(dissoc {:cde 345 :fgh 456} :cde)\n(dissoc {:cde nil :fgh 456} :cde)\n(= {} {})\n(= {} (hash-map))\n(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n(= {:a 11 :b 22} (hash-map :a 11))\n(= {:a [11 22]} {:a (list 11 22)})\n(= {:a 11 :b 22} (list :a 11 :b 22))\n(= {} [])\n(= [] {})\n(keyword :abc)\n(keyword? (first (keys {\":abc\" 123 \":def\" 456})))\n(def! bar (fn* [a] {:foo (get a :foo)}))\n(bar {:foo (fn* [x] x)})\n(bar {:foo 3})\n(throw \"err1\")\n(try* 123 (catch* e 456))\n(try* abc (catch* exc (prn \"exc is:\" exc)))\n(try* (abc 1 2) (catch* exc (prn \"exc is:\" exc)))\n(try* (nth () 1) (catch* exc (prn \"exc is:\" exc)))\n(try* (throw \"my exception\") (catch* exc (do (prn \"exc:\" exc) 7)))\n(try* (do (try* \"t1\" (catch* e \"c1\")) (throw \"e1\")) (catch* e \"c2\"))\n(try* (try* (throw \"e1\") (catch* e (throw \"e2\"))) (catch* e \"c2\"))\n(try* (map throw (list \"my err\")) (catch* exc exc))\n(symbol? 'abc)\n(symbol? \"abc\")\n(nil? nil)\n(nil? true)\n(true? true)\n(true? false)\n(true? true?)\n(false? false)\n(false? true)\n(apply + (list 2 3))\n(apply + 4 (list 5))\n(apply prn (list 1 2 \"3\" (list)))\n(apply prn 1 2 (list \"3\" (list)))\n(apply list (list))\n(apply symbol? (list (quote two)))\n(apply (fn* (a b) (+ a b)) (list 2 3))\n(apply (fn* (a b) (+ a b)) 4 (list 5))\n(def! nums (list 1 2 3))\n(def! double (fn* (a) (* 2 a)))\n(double 3)\n(map double nums) \n(map (fn* (x) (symbol? x)) (list 1 (quote two) \"three\"))\n(= () (map str ()))\n(symbol? :abc)\n(symbol? 'abc)\n(symbol? \"abc\")\n(symbol? (symbol \"abc\"))\n(keyword? :abc)\n(keyword? 'abc)\n(keyword? \"abc\")\n(keyword? \"\")\n(keyword? (keyword \"abc\"))\n(symbol \"abc\")\n(keyword \"abc\")\n(sequential? (list 1 2 3))\n(sequential? [15])\n(sequential? sequential?)\n(sequential? nil)\n(sequential? \"abc\")\n(apply + 4 [5])\n(apply prn 1 2 [\"3\" 4])\n(apply list [])\n(apply (fn* (a b) (+ a b)) [2 3])\n(apply (fn* (a b) (+ a b)) 4 [5])\n(map (fn* (a) (* 2 a)) [1 2 3])\n(map (fn* [& args] (list? args)) [1 2])\n(vector? [10 11])\n(vector? '(12 13))\n(vector 3 4 5)\n(= [] (vector))\n(map? {})\n(map? '())\n(map? [])\n(map? 'abc)\n(map? :abc)\n(hash-map \"a\" 1)\n{\"a\" 1}\n(assoc {} \"a\" 1)\n(get (assoc (assoc {\"a\" 1 } \"b\" 2) \"c\" 3) \"a\")\n(def! hm1 (hash-map))\n(map? hm1)\n(map? 1)\n(map? \"abc\")\n(get nil \"a\")\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(def! hm2 (assoc hm1 \"a\" 1))\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(get hm2 \"a\")\n(contains? hm2 \"a\")\n(keys hm1)\n(= () (keys hm1))\n(keys hm2)\n(keys {\"1\" 1})\n(vals hm1)\n(= () (vals hm1))\n(vals hm2)\n(count (keys (assoc hm2 \"b\" 2 \"c\" 3)))\n(get {:abc 123} :abc)\n(contains? {:abc 123} :abc)\n(contains? {:abcd 123} :abc)\n(assoc {} :bcd 234)\n(keyword? (nth (keys {:abc 123 :def 456}) 0))\n(keyword? (nth (vals {\"a\" :abc \"b\" :def}) 0))\n(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))\n(get hm4 :a)\n(get hm4 :b)\n(get hm4 :c)\n(contains? {:abc nil} :abc)\n(assoc {} :bcd nil)\n(str \"A\" {:abc \"val\"} \"Z\")\n(str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(pr-str \"A\" {:abc \"val\"} \"Z\")\n(pr-str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(def! s (str {:abc \"val1\" :def \"val2\"}))\n(cond (= s \"{:abc val1 :def val2}\") true (= s \"{:def val2 :abc val1}\") true)\n(def! p (pr-str {:abc \"val1\" :def \"val2\"}))\n(cond (= p \"{:abc \\\"val1\\\" :def \\\"val2\\\"}\") true (= p \"{:def \\\"val2\\\" :abc \\\"val1\\\"}\") true)\n(apply (fn* (& more) (list? more)) [1 2 3])\n(apply (fn* (& more) (list? more)) [])\n(apply (fn* (a & more) (list? more)) [1])\n(throw {:msg \"err2\"})\n(try* xyz)\n(try* (throw (list 1 2 3)) (catch* exc (do (prn \"err:\" exc) 7)))\n(def! hm3 (assoc hm2 \"b\" 2))\n(count (keys hm3))\n(count (vals hm3))\n(dissoc hm3 \"a\")\n(dissoc hm3 \"a\" \"b\")\n(dissoc hm3 \"a\" \"b\" \"c\")\n(count (keys hm3))\n(dissoc {:cde 345 :fgh 456} :cde)\n(dissoc {:cde nil :fgh 456} :cde)\n(= {} {})\n(= {} (hash-map))\n(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n(= {:a 11 :b 22} (hash-map :a 11))\n(= {:a [11 22]} {:a (list 11 22)})\n(= {:a 11 :b 22} (list :a 11 :b 22))\n(= {} [])\n(= [] {})\n(keyword :abc)\n(keyword? (first (keys {\":abc\" 123 \":def\" 456})))\n(def! bar (fn* [a] {:foo (get a :foo)}))\n(bar {:foo (fn* [x] x)})\n(bar {:foo 3})\n(throw \"err1\")\n(try* 123 (catch* e 456))\n(try* abc (catch* exc (prn \"exc is:\" exc)))\n(try* (abc 1 2) (catch* exc (prn \"exc is:\" exc)))\n(try* (nth () 1) (catch* exc (prn \"exc is:\" exc)))\n(try* (throw \"my exception\") (catch* exc (do (prn \"exc:\" exc) 7)))\n(try* (do (try* \"t1\" (catch* e \"c1\")) (throw \"e1\")) (catch* e \"c2\"))\n(try* (try* (throw \"e1\") (catch* e (throw \"e2\"))) (catch* e \"c2\"))\n(try* (map throw (list \"my err\")) (catch* exc exc))\n(symbol? 'abc)\n(symbol? \"abc\")\n(nil? nil)\n(nil? true)\n(true? true)\n(true? false)\n(true? true?)\n(false? false)\n(false? true)\n(apply + (list 2 3))\n(apply + 4 (list 5))\n(apply prn (list 1 2 \"3\" (list)))\n(apply prn 1 2 (list \"3\" (list)))\n(apply list (list))\n(apply symbol? (list (quote two)))\n(apply (fn* (a b) (+ a b)) (list 2 3))\n(apply (fn* (a b) (+ a b)) 4 (list 5))\n(def! nums (list 1 2 3))\n(def! double (fn* (a) (* 2 a)))\n(double 3)\n(map double nums) \n(map (fn* (x) (symbol? x)) (list 1 (quote two) \"three\"))\n(= () (map str ()))\n(symbol? :abc)\n(symbol? 'abc)\n(symbol? \"abc\")\n(symbol? (symbol \"abc\"))\n(keyword? :abc)\n(keyword? 'abc)\n(keyword? \"abc\")\n(keyword? \"\")\n(keyword? (keyword \"abc\"))\n(symbol \"abc\")\n(keyword \"abc\")\n(sequential? (list 1 2 3))\n(sequential? [15])\n(sequential? sequential?)\n(sequential? nil)\n(sequential? \"abc\")\n(apply + 4 [5])\n(apply prn 1 2 [\"3\" 4])\n(apply list [])\n(apply (fn* (a b) (+ a b)) [2 3])\n(apply (fn* (a b) (+ a b)) 4 [5])\n(map (fn* (a) (* 2 a)) [1 2 3])\n(map (fn* [& args] (list? args)) [1 2])\n(vector? [10 11])\n(vector? '(12 13))\n(vector 3 4 5)\n(= [] (vector))\n(map? {})\n(map? '())\n(map? [])\n(map? 'abc)\n(map? :abc)\n(hash-map \"a\" 1)\n{\"a\" 1}\n(assoc {} \"a\" 1)\n(get (assoc (assoc {\"a\" 1 } \"b\" 2) \"c\" 3) \"a\")\n(def! hm1 (hash-map))\n(map? hm1)\n(map? 1)\n(map? \"abc\")\n(get nil \"a\")\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(def! hm2 (assoc hm1 \"a\" 1))\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(get hm2 \"a\")\n(contains? hm2 \"a\")\n(keys hm1)\n(= () (keys hm1))\n(keys hm2)\n(keys {\"1\" 1})\n(vals hm1)\n(= () (vals hm1))\n(vals hm2)\n(count (keys (assoc hm2 \"b\" 2 \"c\" 3)))\n(get {:abc 123} :abc)\n(contains? {:abc 123} :abc)\n(contains? {:abcd 123} :abc)\n(assoc {} :bcd 234)\n(keyword? (nth (keys {:abc 123 :def 456}) 0))\n(keyword? (nth (vals {\"a\" :abc \"b\" :def}) 0))\n(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))\n(get hm4 :a)\n(get hm4 :b)\n(get hm4 :c)\n(contains? {:abc nil} :abc)\n(assoc {} :bcd nil)\n(str \"A\" {:abc \"val\"} \"Z\")\n(str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(pr-str \"A\" {:abc \"val\"} \"Z\")\n(pr-str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(def! s (str {:abc \"val1\" :def \"val2\"}))\n(cond (= s \"{:abc val1 :def val2}\") true (= s \"{:def val2 :abc val1}\") true)\n(def! p (pr-str {:abc \"val1\" :def \"val2\"}))\n(cond (= p \"{:abc \\\"val1\\\" :def \\\"val2\\\"}\") true (= p \"{:def \\\"val2\\\" :abc \\\"val1\\\"}\") true)\n(apply (fn* (& more) (list? more)) [1 2 3])\n(apply (fn* (& more) (list? more)) [])\n(apply (fn* (a & more) (list? more)) [1])\n(throw {:msg \"err2\"})\n(try* xyz)\n(try* (throw (list 1 2 3)) (catch* exc (do (prn \"err:\" exc) 7)))\n(def! hm3 (assoc hm2 \"b\" 2))\n(count (keys hm3))\n(count (vals hm3))\n(dissoc hm3 \"a\")\n(dissoc hm3 \"a\" \"b\")\n(dissoc hm3 \"a\" \"b\" \"c\")\n(count (keys hm3))\n(dissoc {:cde 345 :fgh 456} :cde)\n(dissoc {:cde nil :fgh 456} :cde)\n(= {} {})\n(= {} (hash-map))\n(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n(= {:a 11 :b 22} (hash-map :a 11))\n(= {:a [11 22]} {:a (list 11 22)})\n(= {:a 11 :b 22} (list :a 11 :b 22))\n(= {} [])\n(= [] {})\n(keyword :abc)\n(keyword? (first (keys {\":abc\" 123 \":def\" 456})))\n(def! bar (fn* [a] {:foo (get a :foo)}))\n(bar {:foo (fn* [x] x)})\n(bar {:foo 3})\n(throw \"err1\")\n(try* 123 (catch* e 456))\n(try* abc (catch* exc (prn \"exc is:\" exc)))\n(try* (abc 1 2) (catch* exc (prn \"exc is:\" exc)))\n(try* (nth () 1) (catch* exc (prn \"exc is:\" exc)))\n(try* (throw \"my exception\") (catch* exc (do (prn \"exc:\" exc) 7)))\n(try* (do (try* \"t1\" (catch* e \"c1\")) (throw \"e1\")) (catch* e \"c2\"))\n(try* (try* (throw \"e1\") (catch* e (throw \"e2\"))) (catch* e \"c2\"))\n(try* (map throw (list \"my err\")) (catch* exc exc))\n(symbol? 'abc)\n(symbol? \"abc\")\n(nil? nil)\n(nil? true)\n(true? true)\n(true? false)\n(true? true?)\n(false? false)\n(false? true)\n(apply + (list 2 3))\n(apply + 4 (list 5))\n(apply prn (list 1 2 \"3\" (list)))\n(apply prn 1 2 (list \"3\" (list)))\n(apply list (list))\n(apply symbol? (list (quote two)))\n(apply (fn* (a b) (+ a b)) (list 2 3))\n(apply (fn* (a b) (+ a b)) 4 (list 5))\n(def! nums (list 1 2 3))\n(def! double (fn* (a) (* 2 a)))\n(double 3)\n(map double nums) \n(map (fn* (x) (symbol? x)) (list 1 (quote two) \"three\"))\n(= () (map str ()))\n(symbol? :abc)\n(symbol? 'abc)\n(symbol? \"abc\")\n(symbol? (symbol \"abc\"))\n(keyword? :abc)\n(keyword? 'abc)\n(keyword? \"abc\")\n(keyword? \"\")\n(keyword? (keyword \"abc\"))\n(symbol \"abc\")\n(keyword \"abc\")\n(sequential? (list 1 2 3))\n(sequential? [15])\n(sequential? sequential?)\n(sequential? nil)\n(sequential? \"abc\")\n(apply + 4 [5])\n(apply prn 1 2 [\"3\" 4])\n(apply list [])\n(apply (fn* (a b) (+ a b)) [2 3])\n(apply (fn* (a b) (+ a b)) 4 [5])\n(map (fn* (a) (* 2 a)) [1 2 3])\n(map (fn* [& args] (list? args)) [1 2])\n(vector? [10 11])\n(vector? '(12 13))\n(vector 3 4 5)\n(= [] (vector))\n(map? {})\n(map? '())\n(map? [])\n(map? 'abc)\n(map? :abc)\n(hash-map \"a\" 1)\n{\"a\" 1}\n(assoc {} \"a\" 1)\n(get (assoc (assoc {\"a\" 1 } \"b\" 2) \"c\" 3) \"a\")\n(def! hm1 (hash-map))\n(map? hm1)\n(map? 1)\n(map? \"abc\")\n(get nil \"a\")\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(def! hm2 (assoc hm1 \"a\" 1))\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(get hm2 \"a\")\n(contains? hm2 \"a\")\n(keys hm1)\n(= () (keys hm1))\n(keys hm2)\n(keys {\"1\" 1})\n(vals hm1)\n(= () (vals hm1))\n(vals hm2)\n(count (keys (assoc hm2 \"b\" 2 \"c\" 3)))\n(get {:abc 123} :abc)\n(contains? {:abc 123} :abc)\n(contains? {:abcd 123} :abc)\n(assoc {} :bcd 234)\n(keyword? (nth (keys {:abc 123 :def 456}) 0))\n(keyword? (nth (vals {\"a\" :abc \"b\" :def}) 0))\n(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))\n(get hm4 :a)\n(get hm4 :b)\n(get hm4 :c)\n(contains? {:abc nil} :abc)\n(assoc {} :bcd nil)\n(str \"A\" {:abc \"val\"} \"Z\")\n(str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(pr-str \"A\" {:abc \"val\"} \"Z\")\n(pr-str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(def! s (str {:abc \"val1\" :def \"val2\"}))\n(cond (= s \"{:abc val1 :def val2}\") true (= s \"{:def val2 :abc val1}\") true)\n(def! p (pr-str {:abc \"val1\" :def \"val2\"}))\n(cond (= p \"{:abc \\\"val1\\\" :def \\\"val2\\\"}\") true (= p \"{:def \\\"val2\\\" :abc \\\"val1\\\"}\") true)\n(apply (fn* (& more) (list? more)) [1 2 3])\n(apply (fn* (& more) (list? more)) [])\n(apply (fn* (a & more) (list? more)) [1])\n(throw {:msg \"err2\"})\n(try* xyz)\n(try* (throw (list 1 2 3)) (catch* exc (do (prn \"err:\" exc) 7)))\n(def! hm3 (assoc hm2 \"b\" 2))\n(count (keys hm3))\n(count (vals hm3))\n(dissoc hm3 \"a\")\n(dissoc hm3 \"a\" \"b\")\n(dissoc hm3 \"a\" \"b\" \"c\")\n(count (keys hm3))\n(dissoc {:cde 345 :fgh 456} :cde)\n(dissoc {:cde nil :fgh 456} :cde)\n(= {} {})\n(= {} (hash-map))\n(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n(= {:a 11 :b 22} (hash-map :a 11))\n(= {:a [11 22]} {:a (list 11 22)})\n(= {:a 11 :b 22} (list :a 11 :b 22))\n(= {} [])\n(= [] {})\n(keyword :abc)\n(keyword? (first (keys {\":abc\" 123 \":def\" 456})))\n(def! bar (fn* [a] {:foo (get a :foo)}))\n(bar {:foo (fn* [x] x)})\n(bar {:foo 3})\n(throw \"err1\")\n(try* 123 (catch* e 456))\n(try* abc (catch* exc (prn \"exc is:\" exc)))\n(try* (abc 1 2) (catch* exc (prn \"exc is:\" exc)))\n(try* (nth () 1) (catch* exc (prn \"exc is:\" exc)))\n(try* (throw \"my exception\") (catch* exc (do (prn \"exc:\" exc) 7)))\n(try* (do (try* \"t1\" (catch* e \"c1\")) (throw \"e1\")) (catch* e \"c2\"))\n(try* (try* (throw \"e1\") (catch* e (throw \"e2\"))) (catch* e \"c2\"))\n(try* (map throw (list \"my err\")) (catch* exc exc))\n(symbol? 'abc)\n(symbol? \"abc\")\n(nil? nil)\n(nil? true)\n(true? true)\n(true? false)\n(true? true?)\n(false? false)\n(false? true)\n(apply + (list 2 3))\n(apply + 4 (list 5))\n(apply prn (list 1 2 \"3\" (list)))\n(apply prn 1 2 (list \"3\" (list)))\n(apply list (list))\n(apply symbol? (list (quote two)))\n(apply (fn* (a b) (+ a b)) (list 2 3))\n(apply (fn* (a b) (+ a b)) 4 (list 5))\n(def! nums (list 1 2 3))\n(def! double (fn* (a) (* 2 a)))\n(double 3)\n(map double nums) \n(map (fn* (x) (symbol? x)) (list 1 (quote two) \"three\"))\n(= () (map str ()))\n(symbol? :abc)\n(symbol? 'abc)\n(symbol? \"abc\")\n(symbol? (symbol \"abc\"))\n(keyword? :abc)\n(keyword? 'abc)\n(keyword? \"abc\")\n(keyword? \"\")\n(keyword? (keyword \"abc\"))\n(symbol \"abc\")\n(keyword \"abc\")\n(sequential? (list 1 2 3))\n(sequential? [15])\n(sequential? sequential?)\n(sequential? nil)\n(sequential? \"abc\")\n(apply + 4 [5])\n(apply prn 1 2 [\"3\" 4])\n(apply list [])\n(apply (fn* (a b) (+ a b)) [2 3])\n(apply (fn* (a b) (+ a b)) 4 [5])\n(map (fn* (a) (* 2 a)) [1 2 3])\n(map (fn* [& args] (list? args)) [1 2])\n(vector? [10 11])\n(vector? '(12 13))\n(vector 3 4 5)\n(= [] (vector))\n(map? {})\n(map? '())\n(map? [])\n(map? 'abc)\n(map? :abc)\n(hash-map \"a\" 1)\n{\"a\" 1}\n(assoc {} \"a\" 1)\n(get (assoc (assoc {\"a\" 1 } \"b\" 2) \"c\" 3) \"a\")\n(def! hm1 (hash-map))\n(map? hm1)\n(map? 1)\n(map? \"abc\")\n(get nil \"a\")\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(def! hm2 (assoc hm1 \"a\" 1))\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(get hm2 \"a\")\n(contains? hm2 \"a\")\n(keys hm1)\n(= () (keys hm1))\n(keys hm2)\n(keys {\"1\" 1})\n(vals hm1)\n(= () (vals hm1))\n(vals hm2)\n(count (keys (assoc hm2 \"b\" 2 \"c\" 3)))\n(get {:abc 123} :abc)\n(contains? {:abc 123} :abc)\n(contains? {:abcd 123} :abc)\n(assoc {} :bcd 234)\n(keyword? (nth (keys {:abc 123 :def 456}) 0))\n(keyword? (nth (vals {\"a\" :abc \"b\" :def}) 0))\n(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))\n(get hm4 :a)\n(get hm4 :b)\n(get hm4 :c)\n(contains? {:abc nil} :abc)\n(assoc {} :bcd nil)\n(str \"A\" {:abc \"val\"} \"Z\")\n(str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(pr-str \"A\" {:abc \"val\"} \"Z\")\n(pr-str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(def! s (str {:abc \"val1\" :def \"val2\"}))\n(cond (= s \"{:abc val1 :def val2}\") true (= s \"{:def val2 :abc val1}\") true)\n(def! p (pr-str {:abc \"val1\" :def \"val2\"}))\n(cond (= p \"{:abc \\\"val1\\\" :def \\\"val2\\\"}\") true (= p \"{:def \\\"val2\\\" :abc \\\"val1\\\"}\") true)\n(apply (fn* (& more) (list? more)) [1 2 3])\n(apply (fn* (& more) (list? more)) [])\n(apply (fn* (a & more) (list? more)) [1])\n(throw {:msg \"err2\"})\n(try* xyz)\n(try* (throw (list 1 2 3)) (catch* exc (do (prn \"err:\" exc) 7)))\n(def! hm3 (assoc hm2 \"b\" 2))\n(count (keys hm3))\n(count (vals hm3))\n(dissoc hm3 \"a\")\n(dissoc hm3 \"a\" \"b\")\n(dissoc hm3 \"a\" \"b\" \"c\")\n(count (keys hm3))\n(dissoc {:cde 345 :fgh 456} :cde)\n(dissoc {:cde nil :fgh 456} :cde)\n(= {} {})\n(= {} (hash-map))\n(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n(= {:a 11 :b 22} (hash-map :a 11))\n(= {:a [11 22]} {:a (list 11 22)})\n(= {:a 11 :b 22} (list :a 11 :b 22))\n(= {} [])\n(= [] {})\n(keyword :abc)\n(keyword? (first (keys {\":abc\" 123 \":def\" 456})))\n(def! bar (fn* [a] {:foo (get a :foo)}))\n(bar {:foo (fn* [x] x)})\n(bar {:foo 3})\n(throw \"err1\")\n(throw \"err1\")\n(try* 123 (catch* e 456))\n(try* abc (catch* exc (prn \"exc is:\" exc)))\n(try* (abc 1 2) (catch* exc (prn \"exc is:\" exc)))\n(try* (nth () 1) (catch* exc (prn \"exc is:\" exc)))\n(try* (throw \"my exception\") (catch* exc (do (prn \"exc:\" exc) 7)))\n(try* (do (try* \"t1\" (catch* e \"c1\")) (throw \"e1\")) (catch* e \"c2\"))\n(try* (try* (throw \"e1\") (catch* e (throw \"e2\"))) (catch* e \"c2\"))\n(try* (map throw (list \"my err\")) (catch* exc exc))\n(symbol? 'abc)\n(symbol? \"abc\")\n(nil? nil)\n(nil? true)\n(true? true)\n(true? false)\n(true? true?)\n(false? false)\n(false? true)\n(apply + (list 2 3))\n(apply + 4 (list 5))\n(apply prn (list 1 2 \"3\" (list)))\n(apply prn 1 2 (list \"3\" (list)))\n(apply list (list))\n(apply symbol? (list (quote two)))\n(apply (fn* (a b) (+ a b)) (list 2 3))\n(apply (fn* (a b) (+ a b)) 4 (list 5))\n(def! nums (list 1 2 3))\n(def! double (fn* (a) (* 2 a)))\n(double 3)\n(map double nums) \n(map (fn* (x) (symbol? x)) (list 1 (quote two) \"three\"))\n(= () (map str ()))\n(symbol? :abc)\n(symbol? 'abc)\n(symbol? \"abc\")\n(symbol? (symbol \"abc\"))\n(keyword? :abc)\n(keyword? 'abc)\n(keyword? \"abc\")\n(keyword? \"\")\n(keyword? (keyword \"abc\"))\n(symbol \"abc\")\n(keyword \"abc\")\n(sequential? (list 1 2 3))\n(sequential? [15])\n(sequential? sequential?)\n(sequential? nil)\n(sequential? \"abc\")\n(apply + 4 [5])\n(apply prn 1 2 [\"3\" 4])\n(apply list [])\n(apply (fn* (a b) (+ a b)) [2 3])\n(apply (fn* (a b) (+ a b)) 4 [5])\n(map (fn* (a) (* 2 a)) [1 2 3])\n(map (fn* [& args] (list? args)) [1 2])\n(vector? [10 11])\n(vector? '(12 13))\n(vector 3 4 5)\n(= [] (vector))\n(map? {})\n(map? '())\n(map? [])\n(map? 'abc)\n(map? :abc)\n(hash-map \"a\" 1)\n{\"a\" 1}\n(assoc {} \"a\" 1)\n(get (assoc (assoc {\"a\" 1 } \"b\" 2) \"c\" 3) \"a\")\n(def! hm1 (hash-map))\n(map? hm1)\n(map? 1)\n(map? \"abc\")\n(get nil \"a\")\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(def! hm2 (assoc hm1 \"a\" 1))\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(get hm2 \"a\")\n(contains? hm2 \"a\")\n(keys hm1)\n(= () (keys hm1))\n(keys hm2)\n(keys {\"1\" 1})\n(vals hm1)\n(= () (vals hm1))\n(vals hm2)\n(count (keys (assoc hm2 \"b\" 2 \"c\" 3)))\n(get {:abc 123} :abc)\n(contains? {:abc 123} :abc)\n(contains? {:abcd 123} :abc)\n(assoc {} :bcd 234)\n(keyword? (nth (keys {:abc 123 :def 456}) 0))\n(keyword? (nth (vals {\"a\" :abc \"b\" :def}) 0))\n(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))\n(get hm4 :a)\n(get hm4 :b)\n(get hm4 :c)\n(contains? {:abc nil} :abc)\n(assoc {} :bcd nil)\n(str \"A\" {:abc \"val\"} \"Z\")\n(str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(pr-str \"A\" {:abc \"val\"} \"Z\")\n(pr-str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(def! s (str {:abc \"val1\" :def \"val2\"}))\n(cond (= s \"{:abc val1 :def val2}\") true (= s \"{:def val2 :abc val1}\") true)\n(def! p (pr-str {:abc \"val1\" :def \"val2\"}))\n(cond (= p \"{:abc \\\"val1\\\" :def \\\"val2\\\"}\") true (= p \"{:def \\\"val2\\\" :abc \\\"val1\\\"}\") true)\n(apply (fn* (& more) (list? more)) [1 2 3])\n(apply (fn* (& more) (list? more)) [])\n(apply (fn* (a & more) (list? more)) [1])\n(throw {:msg \"err2\"})\n(try* xyz)\n(try* (throw (list 1 2 3)) (catch* exc (do (prn \"err:\" exc) 7)))\n(def! hm3 (assoc hm2 \"b\" 2))\n(count (keys hm3))\n(count (vals hm3))\n(dissoc hm3 \"a\")\n(dissoc hm3 \"a\" \"b\")\n(dissoc hm3 \"a\" \"b\" \"c\")\n(count (keys hm3))\n(dissoc {:cde 345 :fgh 456} :cde)\n(dissoc {:cde nil :fgh 456} :cde)\n(= {} {})\n(= {} (hash-map))\n(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n(= {:a 11 :b 22} (hash-map :a 11))\n(= {:a [11 22]} {:a (list 11 22)})\n(= {:a 11 :b 22} (list :a 11 :b 22))\n(= {} [])\n(= [] {})\n(keyword :abc)\n(keyword? (first (keys {\":abc\" 123 \":def\" 456})))\n(def! bar (fn* [a] {:foo (get a :foo)}))\n(bar {:foo (fn* [x] x)})\n(bar {:foo 3})\n (try* abc (catch* exc (prn \"exc is:\" exc)))\n(try* (abc 1 2) (catch* exc (prn \"exc is:\" exc)))\n(throw \"err1\")\n(try* 123 (catch* e 456))\n(try* abc (catch* exc (prn \"exc is:\" exc)))\n(try* (abc 1 2) (catch* exc (prn \"exc is:\" exc)))\n(try* (nth () 1) (catch* exc (prn \"exc is:\" exc)))\n(try* (throw \"my exception\") (catch* exc (do (prn \"exc:\" exc) 7)))\n(try* (do (try* \"t1\" (catch* e \"c1\")) (throw \"e1\")) (catch* e \"c2\"))\n(try* (try* (throw \"e1\") (catch* e (throw \"e2\"))) (catch* e \"c2\"))\n(try* (map throw (list \"my err\")) (catch* exc exc))\n(symbol? 'abc)\n(symbol? \"abc\")\n(nil? nil)\n(nil? true)\n(true? true)\n(true? false)\n(true? true?)\n(false? false)\n(false? true)\n(apply + (list 2 3))\n(apply + 4 (list 5))\n(apply prn (list 1 2 \"3\" (list)))\n(apply prn 1 2 (list \"3\" (list)))\n(apply list (list))\n(apply symbol? (list (quote two)))\n(apply (fn* (a b) (+ a b)) (list 2 3))\n(apply (fn* (a b) (+ a b)) 4 (list 5))\n(def! nums (list 1 2 3))\n(def! double (fn* (a) (* 2 a)))\n(double 3)\n(map double nums) \n(map (fn* (x) (symbol? x)) (list 1 (quote two) \"three\"))\n(= () (map str ()))\n(symbol? :abc)\n(symbol? 'abc)\n(symbol? \"abc\")\n(symbol? (symbol \"abc\"))\n(keyword? :abc)\n(keyword? 'abc)\n(keyword? \"abc\")\n(keyword? \"\")\n(keyword? (keyword \"abc\"))\n(symbol \"abc\")\n(keyword \"abc\")\n(sequential? (list 1 2 3))\n(sequential? [15])\n(sequential? sequential?)\n(sequential? nil)\n(sequential? \"abc\")\n(apply + 4 [5])\n(apply prn 1 2 [\"3\" 4])\n(apply list [])\n(apply (fn* (a b) (+ a b)) [2 3])\n(apply (fn* (a b) (+ a b)) 4 [5])\n(map (fn* (a) (* 2 a)) [1 2 3])\n(map (fn* [& args] (list? args)) [1 2])\n(vector? [10 11])\n(vector? '(12 13))\n(vector 3 4 5)\n(= [] (vector))\n(map? {})\n(map? '())\n(map? [])\n(map? 'abc)\n(map? :abc)\n(hash-map \"a\" 1)\n{\"a\" 1}\n(assoc {} \"a\" 1)\n(get (assoc (assoc {\"a\" 1 } \"b\" 2) \"c\" 3) \"a\")\n(def! hm1 (hash-map))\n(map? hm1)\n(map? 1)\n(map? \"abc\")\n(get nil \"a\")\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(def! hm2 (assoc hm1 \"a\" 1))\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(get hm2 \"a\")\n(contains? hm2 \"a\")\n(keys hm1)\n(= () (keys hm1))\n(keys hm2)\n(keys {\"1\" 1})\n(vals hm1)\n(= () (vals hm1))\n(vals hm2)\n(count (keys (assoc hm2 \"b\" 2 \"c\" 3)))\n(get {:abc 123} :abc)\n(contains? {:abc 123} :abc)\n(contains? {:abcd 123} :abc)\n(assoc {} :bcd 234)\n(keyword? (nth (keys {:abc 123 :def 456}) 0))\n(keyword? (nth (vals {\"a\" :abc \"b\" :def}) 0))\n(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))\n(get hm4 :a)\n(get hm4 :b)\n(get hm4 :c)\n(contains? {:abc nil} :abc)\n(assoc {} :bcd nil)\n(str \"A\" {:abc \"val\"} \"Z\")\n(str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(pr-str \"A\" {:abc \"val\"} \"Z\")\n(pr-str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(def! s (str {:abc \"val1\" :def \"val2\"}))\n(cond (= s \"{:abc val1 :def val2}\") true (= s \"{:def val2 :abc val1}\") true)\n(def! p (pr-str {:abc \"val1\" :def \"val2\"}))\n(cond (= p \"{:abc \\\"val1\\\" :def \\\"val2\\\"}\") true (= p \"{:def \\\"val2\\\" :abc \\\"val1\\\"}\") true)\n(apply (fn* (& more) (list? more)) [1 2 3])\n(apply (fn* (& more) (list? more)) [])\n(apply (fn* (a & more) (list? more)) [1])\n(throw {:msg \"err2\"})\n(try* xyz)\n(try* (throw (list 1 2 3)) (catch* exc (do (prn \"err:\" exc) 7)))\n(def! hm3 (assoc hm2 \"b\" 2))\n(count (keys hm3))\n(count (vals hm3))\n(dissoc hm3 \"a\")\n(dissoc hm3 \"a\" \"b\")\n(dissoc hm3 \"a\" \"b\" \"c\")\n(count (keys hm3))\n(dissoc {:cde 345 :fgh 456} :cde)\n(dissoc {:cde nil :fgh 456} :cde)\n(= {} {})\n(= {} (hash-map))\n(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n(= {:a 11 :b 22} (hash-map :a 11))\n(= {:a [11 22]} {:a (list 11 22)})\n(= {:a 11 :b 22} (list :a 11 :b 22))\n(= {} [])\n(= [] {})\n(keyword :abc)\n(keyword? (first (keys {\":abc\" 123 \":def\" 456})))\n(def! bar (fn* [a] {:foo (get a :foo)}))\n(bar {:foo (fn* [x] x)})\n(bar {:foo 3})\n(throw \"err1\")\n(try* 123 (catch* e 456))\n(try* abc (catch* exc (prn \"exc is:\" exc)))\n(try* (abc 1 2) (catch* exc (prn \"exc is:\" exc)))\n(try* (nth () 1) (catch* exc (prn \"exc is:\" exc)))\n(try* (throw \"my exception\") (catch* exc (do (prn \"exc:\" exc) 7)))\n(try* (do (try* \"t1\" (catch* e \"c1\")) (throw \"e1\")) (catch* e \"c2\"))\n(try* (try* (throw \"e1\") (catch* e (throw \"e2\"))) (catch* e \"c2\"))\n(try* (map throw (list \"my err\")) (catch* exc exc))\n(symbol? 'abc)\n(symbol? \"abc\")\n(nil? nil)\n(nil? true)\n(true? true)\n(true? false)\n(true? true?)\n(false? false)\n(false? true)\n(apply + (list 2 3))\n(apply + 4 (list 5))\n(apply prn (list 1 2 \"3\" (list)))\n(apply prn 1 2 (list \"3\" (list)))\n(apply list (list))\n(apply symbol? (list (quote two)))\n(apply (fn* (a b) (+ a b)) (list 2 3))\n(apply (fn* (a b) (+ a b)) 4 (list 5))\n(def! nums (list 1 2 3))\n(def! double (fn* (a) (* 2 a)))\n(double 3)\n(map double nums) \n(map (fn* (x) (symbol? x)) (list 1 (quote two) \"three\"))\n(= () (map str ()))\n(symbol? :abc)\n(symbol? 'abc)\n(symbol? \"abc\")\n(symbol? (symbol \"abc\"))\n(keyword? :abc)\n(keyword? 'abc)\n(keyword? \"abc\")\n(keyword? \"\")\n(keyword? (keyword \"abc\"))\n(symbol \"abc\")\n(keyword \"abc\")\n(sequential? (list 1 2 3))\n(sequential? [15])\n(sequential? sequential?)\n(sequential? nil)\n(sequential? \"abc\")\n(apply + 4 [5])\n(apply prn 1 2 [\"3\" 4])\n(apply list [])\n(apply (fn* (a b) (+ a b)) [2 3])\n(apply (fn* (a b) (+ a b)) 4 [5])\n(map (fn* (a) (* 2 a)) [1 2 3])\n(map (fn* [& args] (list? args)) [1 2])\n(vector? [10 11])\n(vector? '(12 13))\n(vector 3 4 5)\n(= [] (vector))\n(map? {})\n(map? '())\n(map? [])\n(map? 'abc)\n(map? :abc)\n(hash-map \"a\" 1)\n{\"a\" 1}\n(assoc {} \"a\" 1)\n(get (assoc (assoc {\"a\" 1 } \"b\" 2) \"c\" 3) \"a\")\n(def! hm1 (hash-map))\n(map? hm1)\n(map? 1)\n(map? \"abc\")\n(get nil \"a\")\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(def! hm2 (assoc hm1 \"a\" 1))\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(get hm2 \"a\")\n(contains? hm2 \"a\")\n(keys hm1)\n(= () (keys hm1))\n(keys hm2)\n(keys {\"1\" 1})\n(vals hm1)\n(= () (vals hm1))\n(vals hm2)\n(count (keys (assoc hm2 \"b\" 2 \"c\" 3)))\n(get {:abc 123} :abc)\n(contains? {:abc 123} :abc)\n(contains? {:abcd 123} :abc)\n(assoc {} :bcd 234)\n(keyword? (nth (keys {:abc 123 :def 456}) 0))\n(keyword? (nth (vals {\"a\" :abc \"b\" :def}) 0))\n(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))\n(get hm4 :a)\n(get hm4 :b)\n(get hm4 :c)\n(contains? {:abc nil} :abc)\n(assoc {} :bcd nil)\n(str \"A\" {:abc \"val\"} \"Z\")\n(str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(pr-str \"A\" {:abc \"val\"} \"Z\")\n(pr-str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(def! s (str {:abc \"val1\" :def \"val2\"}))\n(cond (= s \"{:abc val1 :def val2}\") true (= s \"{:def val2 :abc val1}\") true)\n(def! p (pr-str {:abc \"val1\" :def \"val2\"}))\n(cond (= p \"{:abc \\\"val1\\\" :def \\\"val2\\\"}\") true (= p \"{:def \\\"val2\\\" :abc \\\"val1\\\"}\") true)\n(apply (fn* (& more) (list? more)) [1 2 3])\n(apply (fn* (& more) (list? more)) [])\n(apply (fn* (a & more) (list? more)) [1])\n(throw {:msg \"err2\"})\n(try* xyz)\n(try* (throw (list 1 2 3)) (catch* exc (do (prn \"err:\" exc) 7)))\n(def! hm3 (assoc hm2 \"b\" 2))\n(count (keys hm3))\n(count (vals hm3))\n(dissoc hm3 \"a\")\n(dissoc hm3 \"a\" \"b\")\n(dissoc hm3 \"a\" \"b\" \"c\")\n(count (keys hm3))\n(dissoc {:cde 345 :fgh 456} :cde)\n(dissoc {:cde nil :fgh 456} :cde)\n(= {} {})\n(= {} (hash-map))\n(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n(= {:a 11 :b 22} (hash-map :a 11))\n(= {:a [11 22]} {:a (list 11 22)})\n(= {:a 11 :b 22} (list :a 11 :b 22))\n(= {} [])\n(= [] {})\n(keyword :abc)\n(keyword? (first (keys {\":abc\" 123 \":def\" 456})))\n(def! bar (fn* [a] {:foo (get a :foo)}))\n(bar {:foo (fn* [x] x)})\n(bar {:foo 3})\n(throw \"err1\")\n(try* 123 (catch* e 456))\n(try* abc (catch* exc (prn \"exc is:\" exc)))\n(try* (abc 1 2) (catch* exc (prn \"exc is:\" exc)))\n(try* (nth () 1) (catch* exc (prn \"exc is:\" exc)))\n(try* (throw \"my exception\") (catch* exc (do (prn \"exc:\" exc) 7)))\n(try* (do (try* \"t1\" (catch* e \"c1\")) (throw \"e1\")) (catch* e \"c2\"))\n(try* (try* (throw \"e1\") (catch* e (throw \"e2\"))) (catch* e \"c2\"))\n(try* (map throw (list \"my err\")) (catch* exc exc))\n(symbol? 'abc)\n(symbol? \"abc\")\n(nil? nil)\n(nil? true)\n(true? true)\n(true? false)\n(true? true?)\n(false? false)\n(false? true)\n(apply + (list 2 3))\n(apply + 4 (list 5))\n(apply prn (list 1 2 \"3\" (list)))\n(apply prn 1 2 (list \"3\" (list)))\n(apply list (list))\n(apply symbol? (list (quote two)))\n(apply (fn* (a b) (+ a b)) (list 2 3))\n(apply (fn* (a b) (+ a b)) 4 (list 5))\n(def! nums (list 1 2 3))\n(def! double (fn* (a) (* 2 a)))\n(double 3)\n(map double nums) \n(map (fn* (x) (symbol? x)) (list 1 (quote two) \"three\"))\n(= () (map str ()))\n(symbol? :abc)\n(symbol? 'abc)\n(symbol? \"abc\")\n(symbol? (symbol \"abc\"))\n(keyword? :abc)\n(keyword? 'abc)\n(keyword? \"abc\")\n(keyword? \"\")\n(keyword? (keyword \"abc\"))\n(symbol \"abc\")\n(keyword \"abc\")\n(sequential? (list 1 2 3))\n(sequential? [15])\n(sequential? sequential?)\n(sequential? nil)\n(sequential? \"abc\")\n(apply + 4 [5])\n(apply prn 1 2 [\"3\" 4])\n(apply list [])\n(apply (fn* (a b) (+ a b)) [2 3])\n(apply (fn* (a b) (+ a b)) 4 [5])\n(map (fn* (a) (* 2 a)) [1 2 3])\n(map (fn* [& args] (list? args)) [1 2])\n(vector? [10 11])\n(vector? '(12 13))\n(vector 3 4 5)\n(= [] (vector))\n(map? {})\n(map? '())\n(map? [])\n(map? 'abc)\n(map? :abc)\n(hash-map \"a\" 1)\n{\"a\" 1}\n(assoc {} \"a\" 1)\n(get (assoc (assoc {\"a\" 1 } \"b\" 2) \"c\" 3) \"a\")\n(def! hm1 (hash-map))\n(map? hm1)\n(map? 1)\n(map? \"abc\")\n(get nil \"a\")\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(def! hm2 (assoc hm1 \"a\" 1))\n(get hm1 \"a\")\n(contains? hm1 \"a\")\n(get hm2 \"a\")\n(contains? hm2 \"a\")\n(keys hm1)\n(= () (keys hm1))\n(keys hm2)\n(keys {\"1\" 1})\n(vals hm1)\n(= () (vals hm1))\n(vals hm2)\n(count (keys (assoc hm2 \"b\" 2 \"c\" 3)))\n(get {:abc 123} :abc)\n(contains? {:abc 123} :abc)\n(contains? {:abcd 123} :abc)\n(assoc {} :bcd 234)\n(keyword? (nth (keys {:abc 123 :def 456}) 0))\n(keyword? (nth (vals {\"a\" :abc \"b\" :def}) 0))\n(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))\n(get hm4 :a)\n(get hm4 :b)\n(get hm4 :c)\n(contains? {:abc nil} :abc)\n(assoc {} :bcd nil)\n(str \"A\" {:abc \"val\"} \"Z\")\n(str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(pr-str \"A\" {:abc \"val\"} \"Z\")\n(pr-str true \".\" false \".\" nil \".\" :keyw \".\" 'symb)\n(def! s (str {:abc \"val1\" :def \"val2\"}))\n(cond (= s \"{:abc val1 :def val2}\") true (= s \"{:def val2 :abc val1}\") true)\n(def! p (pr-str {:abc \"val1\" :def \"val2\"}))\n(cond (= p \"{:abc \\\"val1\\\" :def \\\"val2\\\"}\") true (= p \"{:def \\\"val2\\\" :abc \\\"val1\\\"}\") true)\n(apply (fn* (& more) (list? more)) [1 2 3])\n(apply (fn* (& more) (list? more)) [])\n(apply (fn* (a & more) (list? more)) [1])\n(throw {:msg \"err2\"})\n(try* xyz)\n(try* (throw (list 1 2 3)) (catch* exc (do (prn \"err:\" exc) 7)))\n(def! hm3 (assoc hm2 \"b\" 2))\n(count (keys hm3))\n(count (vals hm3))\n(dissoc hm3 \"a\")\n(dissoc hm3 \"a\" \"b\")\n(dissoc hm3 \"a\" \"b\" \"c\")\n(count (keys hm3))\n(dissoc {:cde 345 :fgh 456} :cde)\n(dissoc {:cde nil :fgh 456} :cde)\n(= {} {})\n(= {} (hash-map))\n(= {:a 11 :b 22} (hash-map :b 22 :a 11))\n(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))\n(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))\n(= {:a 11 :b 22} (hash-map :b 23 :a 11))\n(= {:a 11 :b 22} (hash-map :a 11))\n(= {:a [11 22]} {:a (list 11 22)})\n(= {:a 11 :b 22} (list :a 11 :b 22))\n(= {} [])\n(= [] {})\n(keyword :abc)\n(keyword? (first (keys {\":abc\" 123 \":def\" 456})))\n(def! bar (fn* [a] {:foo (get a :foo)}))\n(bar {:foo (fn* [x] x)})\n(bar {:foo 3})\n___\n(___)\n(let* [a 1 b 2] (do (___)))\nnil\n(nil? 1)\n(nil? nil)\nsum\nmap\nreduce\nfold\n(atom 1)\n(1)\n[1]\n(map [1 2 3] (fn\n(def! add2 (fn* [a] (+ a 2)))\n(map [ 1 2 3] add2)\n(map [] [1 2] add2)\nadd2\n(add2 2)\n(map add2 [1 2 3])\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/../deno/.history b/../deno/.history
+--- a/../deno/.history	(revision aca0b58da07847c2bb872827d75c400ade4be369)
++++ b/../deno/.history	(date 1722495655643)
+@@ -1,1141 +1,4 @@
+-(+ 1 1)
+-(+ 1 1)
+-(+ 1 1)
+-(def! x 1)
+-x
+-(def! x (fn* [a] (+ a a)))
+-x
+-(x 10)
+-(def! x (fn* (a) (+ a a)))
+-(def! x (fn* [a] (+ a a)))
+-(x 1)
+-(def! x (fn* [a] (+ a a)))
+-(x 10)
+-(def! x (fn* [a] (+ a a)))
+-(def! x (fn* [a] (+ a a)))
+-(x 10)
+-(x 10)
+-(x 10)
+-(x "asd")
+-(throw "err1")
+-(try* 123 (catch* e 456))
+-(try* abc (catch* exc (prn "exc is:" exc)))
+-(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))
+-(try* (nth () 1) (catch* exc (prn "exc is:" exc)))
+-(try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7)))
+-(try* (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))
+-(try* (try* (throw "e1") (catch* e (throw "e2"))) (catch* e "c2"))
+-(try* (map throw (list "my err")) (catch* exc exc))
+-(symbol? 'abc)
+-(symbol? "abc")
+-(nil? nil)
+-(nil? true)
+-(true? true)
+-(true? false)
+-(true? true?)
+-(false? false)
+-(false? true)
+-(apply + (list 2 3))
+-(apply + 4 (list 5))
+-(apply prn (list 1 2 "3" (list)))
+-(apply prn 1 2 (list "3" (list)))
+-(apply list (list))
+-(apply symbol? (list (quote two)))
+-(apply (fn* (a b) (+ a b)) (list 2 3))
+-(apply (fn* (a b) (+ a b)) 4 (list 5))
+-(def! nums (list 1 2 3))
+-(def! double (fn* (a) (* 2 a)))
+-(double 3)
+-(map double nums) 
+-(map (fn* (x) (symbol? x)) (list 1 (quote two) "three"))
+-(= () (map str ()))
+-(symbol? :abc)
+-(symbol? 'abc)
+-(symbol? "abc")
+-(symbol? (symbol "abc"))
+-(keyword? :abc)
+-(keyword? 'abc)
+-(keyword? "abc")
+-(keyword? "")
+-(keyword? (keyword "abc"))
+-(symbol "abc")
+-(keyword "abc")
+-(sequential? (list 1 2 3))
+-(sequential? [15])
+-(sequential? sequential?)
+-(sequential? nil)
+-(sequential? "abc")
+-(apply + 4 [5])
+-(apply prn 1 2 ["3" 4])
+-(apply list [])
+-(apply (fn* (a b) (+ a b)) [2 3])
+-(apply (fn* (a b) (+ a b)) 4 [5])
+-(map (fn* (a) (* 2 a)) [1 2 3])
+-(map (fn* [& args] (list? args)) [1 2])
+-(vector? [10 11])
+-(vector? '(12 13))
+-(vector 3 4 5)
+-(= [] (vector))
+-(map? {})
+-(map? '())
+-(map? [])
+-(map? 'abc)
+-(map? :abc)
+-(hash-map "a" 1)
+-{"a" 1}
+-(assoc {} "a" 1)
+-(get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a")
+-(def! hm1 (hash-map))
+-(map? hm1)
+-(map? 1)
+-(map? "abc")
+-(get nil "a")
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(def! hm2 (assoc hm1 "a" 1))
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(get hm2 "a")
+-(contains? hm2 "a")
+-(keys hm1)
+-(= () (keys hm1))
+-(keys hm2)
+-(keys {"1" 1})
+-(vals hm1)
+-(= () (vals hm1))
+-(vals hm2)
+-(count (keys (assoc hm2 "b" 2 "c" 3)))
+-(get {:abc 123} :abc)
+-(contains? {:abc 123} :abc)
+-(contains? {:abcd 123} :abc)
+-(assoc {} :bcd 234)
+-(keyword? (nth (keys {:abc 123 :def 456}) 0))
+-(keyword? (nth (vals {"a" :abc "b" :def}) 0))
+-(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))
+-(get hm4 :a)
+-(get hm4 :b)
+-(get hm4 :c)
+-(contains? {:abc nil} :abc)
+-(assoc {} :bcd nil)
+-(str "A" {:abc "val"} "Z")
+-(str true "." false "." nil "." :keyw "." 'symb)
+-(pr-str "A" {:abc "val"} "Z")
+-(pr-str true "." false "." nil "." :keyw "." 'symb)
+-(def! s (str {:abc "val1" :def "val2"}))
+-(cond (= s "{:abc val1 :def val2}") true (= s "{:def val2 :abc val1}") true)
+-(def! p (pr-str {:abc "val1" :def "val2"}))
+-(cond (= p "{:abc \"val1\" :def \"val2\"}") true (= p "{:def \"val2\" :abc \"val1\"}") true)
+-(apply (fn* (& more) (list? more)) [1 2 3])
+-(apply (fn* (& more) (list? more)) [])
+-(apply (fn* (a & more) (list? more)) [1])
+-(throw {:msg "err2"})
+-(try* xyz)
+-(try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7)))
+-(def! hm3 (assoc hm2 "b" 2))
+-(count (keys hm3))
+-(count (vals hm3))
+-(dissoc hm3 "a")
+-(dissoc hm3 "a" "b")
+-(dissoc hm3 "a" "b" "c")
+-(count (keys hm3))
+-(dissoc {:cde 345 :fgh 456} :cde)
+-(dissoc {:cde nil :fgh 456} :cde)
+-(= {} {})
+-(= {} (hash-map))
+-(= {:a 11 :b 22} (hash-map :b 22 :a 11))
+-(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))
+-(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))
+-(= {:a 11 :b 22} (hash-map :b 23 :a 11))
+-(= {:a 11 :b 22} (hash-map :a 11))
+-(= {:a [11 22]} {:a (list 11 22)})
+-(= {:a 11 :b 22} (list :a 11 :b 22))
+-(= {} [])
+-(= [] {})
+-(keyword :abc)
+-(keyword? (first (keys {":abc" 123 ":def" 456})))
+-(def! bar (fn* [a] {:foo (get a :foo)}))
+-(bar {:foo (fn* [x] x)})
+-(bar {:foo 3})
+-(throw "err1")
+-(try* 123 (catch* e 456))
+-(try* abc (catch* exc (prn "exc is:" exc)))
+-(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))
+-(try* (nth () 1) (catch* exc (prn "exc is:" exc)))
+-(try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7)))
+-(try* (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))
+-(try* (try* (throw "e1") (catch* e (throw "e2"))) (catch* e "c2"))
+-(try* (map throw (list "my err")) (catch* exc exc))
+-(symbol? 'abc)
+-(symbol? "abc")
+-(nil? nil)
+-(nil? true)
+-(true? true)
+-(true? false)
+-(true? true?)
+-(false? false)
+-(false? true)
+-(apply + (list 2 3))
+-(apply + 4 (list 5))
+-(apply prn (list 1 2 "3" (list)))
+-(apply prn 1 2 (list "3" (list)))
+-(apply list (list))
+-(apply symbol? (list (quote two)))
+-(apply (fn* (a b) (+ a b)) (list 2 3))
+-(apply (fn* (a b) (+ a b)) 4 (list 5))
+-(def! nums (list 1 2 3))
+-(def! double (fn* (a) (* 2 a)))
+-(double 3)
+-(map double nums) 
+-(map (fn* (x) (symbol? x)) (list 1 (quote two) "three"))
+-(= () (map str ()))
+-(symbol? :abc)
+-(symbol? 'abc)
+-(symbol? "abc")
+-(symbol? (symbol "abc"))
+-(keyword? :abc)
+-(keyword? 'abc)
+-(keyword? "abc")
+-(keyword? "")
+-(keyword? (keyword "abc"))
+-(symbol "abc")
+-(keyword "abc")
+-(sequential? (list 1 2 3))
+-(sequential? [15])
+-(sequential? sequential?)
+-(sequential? nil)
+-(sequential? "abc")
+-(apply + 4 [5])
+-(apply prn 1 2 ["3" 4])
+-(apply list [])
+-(apply (fn* (a b) (+ a b)) [2 3])
+-(apply (fn* (a b) (+ a b)) 4 [5])
+-(map (fn* (a) (* 2 a)) [1 2 3])
+-(map (fn* [& args] (list? args)) [1 2])
+-(vector? [10 11])
+-(vector? '(12 13))
+-(vector 3 4 5)
+-(= [] (vector))
+-(map? {})
+-(map? '())
+-(map? [])
+-(map? 'abc)
+-(map? :abc)
+-(hash-map "a" 1)
+-{"a" 1}
+-(assoc {} "a" 1)
+-(get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a")
+-(def! hm1 (hash-map))
+-(map? hm1)
+-(map? 1)
+-(map? "abc")
+-(get nil "a")
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(def! hm2 (assoc hm1 "a" 1))
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(get hm2 "a")
+-(contains? hm2 "a")
+-(keys hm1)
+-(= () (keys hm1))
+-(keys hm2)
+-(keys {"1" 1})
+-(vals hm1)
+-(= () (vals hm1))
+-(vals hm2)
+-(count (keys (assoc hm2 "b" 2 "c" 3)))
+-(get {:abc 123} :abc)
+-(contains? {:abc 123} :abc)
+-(contains? {:abcd 123} :abc)
+-(assoc {} :bcd 234)
+-(keyword? (nth (keys {:abc 123 :def 456}) 0))
+-(keyword? (nth (vals {"a" :abc "b" :def}) 0))
+-(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))
+-(get hm4 :a)
+-(get hm4 :b)
+-(get hm4 :c)
+-(contains? {:abc nil} :abc)
+-(assoc {} :bcd nil)
+-(str "A" {:abc "val"} "Z")
+-(str true "." false "." nil "." :keyw "." 'symb)
+-(pr-str "A" {:abc "val"} "Z")
+-(pr-str true "." false "." nil "." :keyw "." 'symb)
+-(def! s (str {:abc "val1" :def "val2"}))
+-(cond (= s "{:abc val1 :def val2}") true (= s "{:def val2 :abc val1}") true)
+-(def! p (pr-str {:abc "val1" :def "val2"}))
+-(cond (= p "{:abc \"val1\" :def \"val2\"}") true (= p "{:def \"val2\" :abc \"val1\"}") true)
+-(apply (fn* (& more) (list? more)) [1 2 3])
+-(apply (fn* (& more) (list? more)) [])
+-(apply (fn* (a & more) (list? more)) [1])
+-(throw {:msg "err2"})
+-(try* xyz)
+-(try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7)))
+-(def! hm3 (assoc hm2 "b" 2))
+-(count (keys hm3))
+-(count (vals hm3))
+-(dissoc hm3 "a")
+-(dissoc hm3 "a" "b")
+-(dissoc hm3 "a" "b" "c")
+-(count (keys hm3))
+-(dissoc {:cde 345 :fgh 456} :cde)
+-(dissoc {:cde nil :fgh 456} :cde)
+-(= {} {})
+-(= {} (hash-map))
+-(= {:a 11 :b 22} (hash-map :b 22 :a 11))
+-(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))
+-(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))
+-(= {:a 11 :b 22} (hash-map :b 23 :a 11))
+-(= {:a 11 :b 22} (hash-map :a 11))
+-(= {:a [11 22]} {:a (list 11 22)})
+-(= {:a 11 :b 22} (list :a 11 :b 22))
+-(= {} [])
+-(= [] {})
+-(keyword :abc)
+-(keyword? (first (keys {":abc" 123 ":def" 456})))
+-(def! bar (fn* [a] {:foo (get a :foo)}))
+-(bar {:foo (fn* [x] x)})
+-(bar {:foo 3})
+-(throw "err1)
+-(throw "err1")
+-(throw "err1")
+-(throw "err1")
+-(throw "err1")
+-(try* 123 (catch* e 456))
+-(try* abc (catch* exc (prn "exc is:" exc)))
+-(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))
+-(try* (nth () 1) (catch* exc (prn "exc is:" exc)))
+-(try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7)))
+-(try* (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))
+-(try* (try* (throw "e1") (catch* e (throw "e2"))) (catch* e "c2"))
+-(try* (map throw (list "my err")) (catch* exc exc))
+-(symbol? 'abc)
+-(symbol? "abc")
+-(nil? nil)
+-(nil? true)
+-(true? true)
+-(true? false)
+-(true? true?)
+-(false? false)
+-(false? true)
+-(apply + (list 2 3))
+-(apply + 4 (list 5))
+-(apply prn (list 1 2 "3" (list)))
+-(apply prn 1 2 (list "3" (list)))
+-(apply list (list))
+-(apply symbol? (list (quote two)))
+-(apply (fn* (a b) (+ a b)) (list 2 3))
+-(apply (fn* (a b) (+ a b)) 4 (list 5))
+-(def! nums (list 1 2 3))
+-(def! double (fn* (a) (* 2 a)))
+-(double 3)
+-(map double nums) 
+-(map (fn* (x) (symbol? x)) (list 1 (quote two) "three"))
+-(= () (map str ()))
+-(symbol? :abc)
+-(symbol? 'abc)
+-(symbol? "abc")
+-(symbol? (symbol "abc"))
+-(keyword? :abc)
+-(keyword? 'abc)
+-(keyword? "abc")
+-(keyword? "")
+-(keyword? (keyword "abc"))
+-(symbol "abc")
+-(keyword "abc")
+-(sequential? (list 1 2 3))
+-(sequential? [15])
+-(sequential? sequential?)
+-(sequential? nil)
+-(sequential? "abc")
+-(apply + 4 [5])
+-(apply prn 1 2 ["3" 4])
+-(apply list [])
+-(apply (fn* (a b) (+ a b)) [2 3])
+-(apply (fn* (a b) (+ a b)) 4 [5])
+-(map (fn* (a) (* 2 a)) [1 2 3])
+-(map (fn* [& args] (list? args)) [1 2])
+-(vector? [10 11])
+-(vector? '(12 13))
+-(vector 3 4 5)
+-(= [] (vector))
+-(map? {})
+-(map? '())
+-(map? [])
+-(map? 'abc)
+-(map? :abc)
+-(hash-map "a" 1)
+-{"a" 1}
+-(assoc {} "a" 1)
+-(get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a")
+-(def! hm1 (hash-map))
+-(map? hm1)
+-(map? 1)
+-(map? "abc")
+-(get nil "a")
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(def! hm2 (assoc hm1 "a" 1))
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(get hm2 "a")
+-(contains? hm2 "a")
+-(keys hm1)
+-(= () (keys hm1))
+-(keys hm2)
+-(keys {"1" 1})
+-(vals hm1)
+-(= () (vals hm1))
+-(vals hm2)
+-(count (keys (assoc hm2 "b" 2 "c" 3)))
+-(get {:abc 123} :abc)
+-(contains? {:abc 123} :abc)
+-(contains? {:abcd 123} :abc)
+-(assoc {} :bcd 234)
+-(keyword? (nth (keys {:abc 123 :def 456}) 0))
+-(keyword? (nth (vals {"a" :abc "b" :def}) 0))
+-(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))
+-(get hm4 :a)
+-(get hm4 :b)
+-(get hm4 :c)
+-(contains? {:abc nil} :abc)
+-(assoc {} :bcd nil)
+-(str "A" {:abc "val"} "Z")
+-(str true "." false "." nil "." :keyw "." 'symb)
+-(pr-str "A" {:abc "val"} "Z")
+-(pr-str true "." false "." nil "." :keyw "." 'symb)
+-(def! s (str {:abc "val1" :def "val2"}))
+-(cond (= s "{:abc val1 :def val2}") true (= s "{:def val2 :abc val1}") true)
+-(def! p (pr-str {:abc "val1" :def "val2"}))
+-(cond (= p "{:abc \"val1\" :def \"val2\"}") true (= p "{:def \"val2\" :abc \"val1\"}") true)
+-(apply (fn* (& more) (list? more)) [1 2 3])
+-(apply (fn* (& more) (list? more)) [])
+-(apply (fn* (a & more) (list? more)) [1])
+-(throw {:msg "err2"})
+-(try* xyz)
+-(try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7)))
+-(def! hm3 (assoc hm2 "b" 2))
+-(count (keys hm3))
+-(count (vals hm3))
+-(dissoc hm3 "a")
+-(dissoc hm3 "a" "b")
+-(dissoc hm3 "a" "b" "c")
+-(count (keys hm3))
+-(dissoc {:cde 345 :fgh 456} :cde)
+-(dissoc {:cde nil :fgh 456} :cde)
+-(= {} {})
+-(= {} (hash-map))
+-(= {:a 11 :b 22} (hash-map :b 22 :a 11))
+-(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))
+-(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))
+-(= {:a 11 :b 22} (hash-map :b 23 :a 11))
+-(= {:a 11 :b 22} (hash-map :a 11))
+-(= {:a [11 22]} {:a (list 11 22)})
+-(= {:a 11 :b 22} (list :a 11 :b 22))
+-(= {} [])
+-(= [] {})
+-(keyword :abc)
+-(keyword? (first (keys {":abc" 123 ":def" 456})))
+-(def! bar (fn* [a] {:foo (get a :foo)}))
+-(bar {:foo (fn* [x] x)})
+-(bar {:foo 3})
+-(throw "err1")
+-(try* 123 (catch* e 456))
+-(try* abc (catch* exc (prn "exc is:" exc)))
+-(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))
+-(try* (nth () 1) (catch* exc (prn "exc is:" exc)))
+-(try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7)))
+-(try* (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))
+-(try* (try* (throw "e1") (catch* e (throw "e2"))) (catch* e "c2"))
+-(try* (map throw (list "my err")) (catch* exc exc))
+-(symbol? 'abc)
+-(symbol? "abc")
+-(nil? nil)
+-(nil? true)
+-(true? true)
+-(true? false)
+-(true? true?)
+-(false? false)
+-(false? true)
+-(apply + (list 2 3))
+-(apply + 4 (list 5))
+-(apply prn (list 1 2 "3" (list)))
+-(apply prn 1 2 (list "3" (list)))
+-(apply list (list))
+-(apply symbol? (list (quote two)))
+-(apply (fn* (a b) (+ a b)) (list 2 3))
+-(apply (fn* (a b) (+ a b)) 4 (list 5))
+-(def! nums (list 1 2 3))
+-(def! double (fn* (a) (* 2 a)))
+-(double 3)
+-(map double nums) 
+-(map (fn* (x) (symbol? x)) (list 1 (quote two) "three"))
+-(= () (map str ()))
+-(symbol? :abc)
+-(symbol? 'abc)
+-(symbol? "abc")
+-(symbol? (symbol "abc"))
+-(keyword? :abc)
+-(keyword? 'abc)
+-(keyword? "abc")
+-(keyword? "")
+-(keyword? (keyword "abc"))
+-(symbol "abc")
+-(keyword "abc")
+-(sequential? (list 1 2 3))
+-(sequential? [15])
+-(sequential? sequential?)
+-(sequential? nil)
+-(sequential? "abc")
+-(apply + 4 [5])
+-(apply prn 1 2 ["3" 4])
+-(apply list [])
+-(apply (fn* (a b) (+ a b)) [2 3])
+-(apply (fn* (a b) (+ a b)) 4 [5])
+-(map (fn* (a) (* 2 a)) [1 2 3])
+-(map (fn* [& args] (list? args)) [1 2])
+-(vector? [10 11])
+-(vector? '(12 13))
+-(vector 3 4 5)
+-(= [] (vector))
+-(map? {})
+-(map? '())
+-(map? [])
+-(map? 'abc)
+-(map? :abc)
+-(hash-map "a" 1)
+-{"a" 1}
+-(assoc {} "a" 1)
+-(get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a")
+-(def! hm1 (hash-map))
+-(map? hm1)
+-(map? 1)
+-(map? "abc")
+-(get nil "a")
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(def! hm2 (assoc hm1 "a" 1))
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(get hm2 "a")
+-(contains? hm2 "a")
+-(keys hm1)
+-(= () (keys hm1))
+-(keys hm2)
+-(keys {"1" 1})
+-(vals hm1)
+-(= () (vals hm1))
+-(vals hm2)
+-(count (keys (assoc hm2 "b" 2 "c" 3)))
+-(get {:abc 123} :abc)
+-(contains? {:abc 123} :abc)
+-(contains? {:abcd 123} :abc)
+-(assoc {} :bcd 234)
+-(keyword? (nth (keys {:abc 123 :def 456}) 0))
+-(keyword? (nth (vals {"a" :abc "b" :def}) 0))
+-(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))
+-(get hm4 :a)
+-(get hm4 :b)
+-(get hm4 :c)
+-(contains? {:abc nil} :abc)
+-(assoc {} :bcd nil)
+-(str "A" {:abc "val"} "Z")
+-(str true "." false "." nil "." :keyw "." 'symb)
+-(pr-str "A" {:abc "val"} "Z")
+-(pr-str true "." false "." nil "." :keyw "." 'symb)
+-(def! s (str {:abc "val1" :def "val2"}))
+-(cond (= s "{:abc val1 :def val2}") true (= s "{:def val2 :abc val1}") true)
+-(def! p (pr-str {:abc "val1" :def "val2"}))
+-(cond (= p "{:abc \"val1\" :def \"val2\"}") true (= p "{:def \"val2\" :abc \"val1\"}") true)
+-(apply (fn* (& more) (list? more)) [1 2 3])
+-(apply (fn* (& more) (list? more)) [])
+-(apply (fn* (a & more) (list? more)) [1])
+-(throw {:msg "err2"})
+-(try* xyz)
+-(try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7)))
+-(def! hm3 (assoc hm2 "b" 2))
+-(count (keys hm3))
+-(count (vals hm3))
+-(dissoc hm3 "a")
+-(dissoc hm3 "a" "b")
+-(dissoc hm3 "a" "b" "c")
+-(count (keys hm3))
+-(dissoc {:cde 345 :fgh 456} :cde)
+-(dissoc {:cde nil :fgh 456} :cde)
+-(= {} {})
+-(= {} (hash-map))
+-(= {:a 11 :b 22} (hash-map :b 22 :a 11))
+-(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))
+-(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))
+-(= {:a 11 :b 22} (hash-map :b 23 :a 11))
+-(= {:a 11 :b 22} (hash-map :a 11))
+-(= {:a [11 22]} {:a (list 11 22)})
+-(= {:a 11 :b 22} (list :a 11 :b 22))
+-(= {} [])
+-(= [] {})
+-(keyword :abc)
+-(keyword? (first (keys {":abc" 123 ":def" 456})))
+-(def! bar (fn* [a] {:foo (get a :foo)}))
+-(bar {:foo (fn* [x] x)})
+-(bar {:foo 3})
+-(throw "err1")
+-(try* 123 (catch* e 456))
+-(try* abc (catch* exc (prn "exc is:" exc)))
+-(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))
+-(try* (nth () 1) (catch* exc (prn "exc is:" exc)))
+-(try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7)))
+-(try* (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))
+-(try* (try* (throw "e1") (catch* e (throw "e2"))) (catch* e "c2"))
+-(try* (map throw (list "my err")) (catch* exc exc))
+-(symbol? 'abc)
+-(symbol? "abc")
+-(nil? nil)
+-(nil? true)
+-(true? true)
+-(true? false)
+-(true? true?)
+-(false? false)
+-(false? true)
+-(apply + (list 2 3))
+-(apply + 4 (list 5))
+-(apply prn (list 1 2 "3" (list)))
+-(apply prn 1 2 (list "3" (list)))
+-(apply list (list))
+-(apply symbol? (list (quote two)))
+-(apply (fn* (a b) (+ a b)) (list 2 3))
+-(apply (fn* (a b) (+ a b)) 4 (list 5))
+-(def! nums (list 1 2 3))
+-(def! double (fn* (a) (* 2 a)))
+-(double 3)
+-(map double nums) 
+-(map (fn* (x) (symbol? x)) (list 1 (quote two) "three"))
+-(= () (map str ()))
+-(symbol? :abc)
+-(symbol? 'abc)
+-(symbol? "abc")
+-(symbol? (symbol "abc"))
+-(keyword? :abc)
+-(keyword? 'abc)
+-(keyword? "abc")
+-(keyword? "")
+-(keyword? (keyword "abc"))
+-(symbol "abc")
+-(keyword "abc")
+-(sequential? (list 1 2 3))
+-(sequential? [15])
+-(sequential? sequential?)
+-(sequential? nil)
+-(sequential? "abc")
+-(apply + 4 [5])
+-(apply prn 1 2 ["3" 4])
+-(apply list [])
+-(apply (fn* (a b) (+ a b)) [2 3])
+-(apply (fn* (a b) (+ a b)) 4 [5])
+-(map (fn* (a) (* 2 a)) [1 2 3])
+-(map (fn* [& args] (list? args)) [1 2])
+-(vector? [10 11])
+-(vector? '(12 13))
+-(vector 3 4 5)
+-(= [] (vector))
+-(map? {})
+-(map? '())
+-(map? [])
+-(map? 'abc)
+-(map? :abc)
+-(hash-map "a" 1)
+-{"a" 1}
+-(assoc {} "a" 1)
+-(get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a")
+-(def! hm1 (hash-map))
+-(map? hm1)
+-(map? 1)
+-(map? "abc")
+-(get nil "a")
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(def! hm2 (assoc hm1 "a" 1))
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(get hm2 "a")
+-(contains? hm2 "a")
+-(keys hm1)
+-(= () (keys hm1))
+-(keys hm2)
+-(keys {"1" 1})
+-(vals hm1)
+-(= () (vals hm1))
+-(vals hm2)
+-(count (keys (assoc hm2 "b" 2 "c" 3)))
+-(get {:abc 123} :abc)
+-(contains? {:abc 123} :abc)
+-(contains? {:abcd 123} :abc)
+-(assoc {} :bcd 234)
+-(keyword? (nth (keys {:abc 123 :def 456}) 0))
+-(keyword? (nth (vals {"a" :abc "b" :def}) 0))
+-(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))
+-(get hm4 :a)
+-(get hm4 :b)
+-(get hm4 :c)
+-(contains? {:abc nil} :abc)
+-(assoc {} :bcd nil)
+-(str "A" {:abc "val"} "Z")
+-(str true "." false "." nil "." :keyw "." 'symb)
+-(pr-str "A" {:abc "val"} "Z")
+-(pr-str true "." false "." nil "." :keyw "." 'symb)
+-(def! s (str {:abc "val1" :def "val2"}))
+-(cond (= s "{:abc val1 :def val2}") true (= s "{:def val2 :abc val1}") true)
+-(def! p (pr-str {:abc "val1" :def "val2"}))
+-(cond (= p "{:abc \"val1\" :def \"val2\"}") true (= p "{:def \"val2\" :abc \"val1\"}") true)
+-(apply (fn* (& more) (list? more)) [1 2 3])
+-(apply (fn* (& more) (list? more)) [])
+-(apply (fn* (a & more) (list? more)) [1])
+-(throw {:msg "err2"})
+-(try* xyz)
+-(try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7)))
+-(def! hm3 (assoc hm2 "b" 2))
+-(count (keys hm3))
+-(count (vals hm3))
+-(dissoc hm3 "a")
+-(dissoc hm3 "a" "b")
+-(dissoc hm3 "a" "b" "c")
+-(count (keys hm3))
+-(dissoc {:cde 345 :fgh 456} :cde)
+-(dissoc {:cde nil :fgh 456} :cde)
+-(= {} {})
+-(= {} (hash-map))
+-(= {:a 11 :b 22} (hash-map :b 22 :a 11))
+-(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))
+-(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))
+-(= {:a 11 :b 22} (hash-map :b 23 :a 11))
+-(= {:a 11 :b 22} (hash-map :a 11))
+-(= {:a [11 22]} {:a (list 11 22)})
+-(= {:a 11 :b 22} (list :a 11 :b 22))
+-(= {} [])
+-(= [] {})
+-(keyword :abc)
+-(keyword? (first (keys {":abc" 123 ":def" 456})))
+-(def! bar (fn* [a] {:foo (get a :foo)}))
+-(bar {:foo (fn* [x] x)})
+-(bar {:foo 3})
+-(throw "err1")
+-(try* 123 (catch* e 456))
+-(try* abc (catch* exc (prn "exc is:" exc)))
+-(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))
+-(try* (nth () 1) (catch* exc (prn "exc is:" exc)))
+-(try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7)))
+-(try* (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))
+-(try* (try* (throw "e1") (catch* e (throw "e2"))) (catch* e "c2"))
+-(try* (map throw (list "my err")) (catch* exc exc))
+-(symbol? 'abc)
+-(symbol? "abc")
+-(nil? nil)
+-(nil? true)
+-(true? true)
+-(true? false)
+-(true? true?)
+-(false? false)
+-(false? true)
+-(apply + (list 2 3))
+-(apply + 4 (list 5))
+-(apply prn (list 1 2 "3" (list)))
+-(apply prn 1 2 (list "3" (list)))
+-(apply list (list))
+-(apply symbol? (list (quote two)))
+-(apply (fn* (a b) (+ a b)) (list 2 3))
+-(apply (fn* (a b) (+ a b)) 4 (list 5))
+-(def! nums (list 1 2 3))
+-(def! double (fn* (a) (* 2 a)))
+-(double 3)
+-(map double nums) 
+-(map (fn* (x) (symbol? x)) (list 1 (quote two) "three"))
+-(= () (map str ()))
+-(symbol? :abc)
+-(symbol? 'abc)
+-(symbol? "abc")
+-(symbol? (symbol "abc"))
+-(keyword? :abc)
+-(keyword? 'abc)
+-(keyword? "abc")
+-(keyword? "")
+-(keyword? (keyword "abc"))
+-(symbol "abc")
+-(keyword "abc")
+-(sequential? (list 1 2 3))
+-(sequential? [15])
+-(sequential? sequential?)
+-(sequential? nil)
+-(sequential? "abc")
+-(apply + 4 [5])
+-(apply prn 1 2 ["3" 4])
+-(apply list [])
+-(apply (fn* (a b) (+ a b)) [2 3])
+-(apply (fn* (a b) (+ a b)) 4 [5])
+-(map (fn* (a) (* 2 a)) [1 2 3])
+-(map (fn* [& args] (list? args)) [1 2])
+-(vector? [10 11])
+-(vector? '(12 13))
+-(vector 3 4 5)
+-(= [] (vector))
+-(map? {})
+-(map? '())
+-(map? [])
+-(map? 'abc)
+-(map? :abc)
+-(hash-map "a" 1)
+-{"a" 1}
+-(assoc {} "a" 1)
+-(get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a")
+-(def! hm1 (hash-map))
+-(map? hm1)
+-(map? 1)
+-(map? "abc")
+-(get nil "a")
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(def! hm2 (assoc hm1 "a" 1))
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(get hm2 "a")
+-(contains? hm2 "a")
+-(keys hm1)
+-(= () (keys hm1))
+-(keys hm2)
+-(keys {"1" 1})
+-(vals hm1)
+-(= () (vals hm1))
+-(vals hm2)
+-(count (keys (assoc hm2 "b" 2 "c" 3)))
+-(get {:abc 123} :abc)
+-(contains? {:abc 123} :abc)
+-(contains? {:abcd 123} :abc)
+-(assoc {} :bcd 234)
+-(keyword? (nth (keys {:abc 123 :def 456}) 0))
+-(keyword? (nth (vals {"a" :abc "b" :def}) 0))
+-(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))
+-(get hm4 :a)
+-(get hm4 :b)
+-(get hm4 :c)
+-(contains? {:abc nil} :abc)
+-(assoc {} :bcd nil)
+-(str "A" {:abc "val"} "Z")
+-(str true "." false "." nil "." :keyw "." 'symb)
+-(pr-str "A" {:abc "val"} "Z")
+-(pr-str true "." false "." nil "." :keyw "." 'symb)
+-(def! s (str {:abc "val1" :def "val2"}))
+-(cond (= s "{:abc val1 :def val2}") true (= s "{:def val2 :abc val1}") true)
+-(def! p (pr-str {:abc "val1" :def "val2"}))
+-(cond (= p "{:abc \"val1\" :def \"val2\"}") true (= p "{:def \"val2\" :abc \"val1\"}") true)
+-(apply (fn* (& more) (list? more)) [1 2 3])
+-(apply (fn* (& more) (list? more)) [])
+-(apply (fn* (a & more) (list? more)) [1])
+-(throw {:msg "err2"})
+-(try* xyz)
+-(try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7)))
+-(def! hm3 (assoc hm2 "b" 2))
+-(count (keys hm3))
+-(count (vals hm3))
+-(dissoc hm3 "a")
+-(dissoc hm3 "a" "b")
+-(dissoc hm3 "a" "b" "c")
+-(count (keys hm3))
+-(dissoc {:cde 345 :fgh 456} :cde)
+-(dissoc {:cde nil :fgh 456} :cde)
+-(= {} {})
+-(= {} (hash-map))
+-(= {:a 11 :b 22} (hash-map :b 22 :a 11))
+-(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))
+-(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))
+-(= {:a 11 :b 22} (hash-map :b 23 :a 11))
+-(= {:a 11 :b 22} (hash-map :a 11))
+-(= {:a [11 22]} {:a (list 11 22)})
+-(= {:a 11 :b 22} (list :a 11 :b 22))
+-(= {} [])
+-(= [] {})
+-(keyword :abc)
+-(keyword? (first (keys {":abc" 123 ":def" 456})))
+-(def! bar (fn* [a] {:foo (get a :foo)}))
+-(bar {:foo (fn* [x] x)})
+-(bar {:foo 3})
+-(throw "err1")
+-(try* 123 (catch* e 456))
+-(try* abc (catch* exc (prn "exc is:" exc)))
+-(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))
+-(try* (nth () 1) (catch* exc (prn "exc is:" exc)))
+-(try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7)))
+-(try* (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))
+-(try* (try* (throw "e1") (catch* e (throw "e2"))) (catch* e "c2"))
+-(try* (map throw (list "my err")) (catch* exc exc))
+-(symbol? 'abc)
+-(symbol? "abc")
+-(nil? nil)
+-(nil? true)
+-(true? true)
+-(true? false)
+-(true? true?)
+-(false? false)
+-(false? true)
+-(apply + (list 2 3))
+-(apply + 4 (list 5))
+-(apply prn (list 1 2 "3" (list)))
+-(apply prn 1 2 (list "3" (list)))
+-(apply list (list))
+-(apply symbol? (list (quote two)))
+-(apply (fn* (a b) (+ a b)) (list 2 3))
+-(apply (fn* (a b) (+ a b)) 4 (list 5))
+-(def! nums (list 1 2 3))
+-(def! double (fn* (a) (* 2 a)))
+-(double 3)
+-(map double nums) 
+-(map (fn* (x) (symbol? x)) (list 1 (quote two) "three"))
+-(= () (map str ()))
+-(symbol? :abc)
+-(symbol? 'abc)
+-(symbol? "abc")
+-(symbol? (symbol "abc"))
+-(keyword? :abc)
+-(keyword? 'abc)
+-(keyword? "abc")
+-(keyword? "")
+-(keyword? (keyword "abc"))
+-(symbol "abc")
+-(keyword "abc")
+-(sequential? (list 1 2 3))
+-(sequential? [15])
+-(sequential? sequential?)
+-(sequential? nil)
+-(sequential? "abc")
+-(apply + 4 [5])
+-(apply prn 1 2 ["3" 4])
+-(apply list [])
+-(apply (fn* (a b) (+ a b)) [2 3])
+-(apply (fn* (a b) (+ a b)) 4 [5])
+-(map (fn* (a) (* 2 a)) [1 2 3])
+-(map (fn* [& args] (list? args)) [1 2])
+-(vector? [10 11])
+-(vector? '(12 13))
+-(vector 3 4 5)
+-(= [] (vector))
+-(map? {})
+-(map? '())
+-(map? [])
+-(map? 'abc)
+-(map? :abc)
+-(hash-map "a" 1)
+-{"a" 1}
+-(assoc {} "a" 1)
+-(get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a")
+-(def! hm1 (hash-map))
+-(map? hm1)
+-(map? 1)
+-(map? "abc")
+-(get nil "a")
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(def! hm2 (assoc hm1 "a" 1))
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(get hm2 "a")
+-(contains? hm2 "a")
+-(keys hm1)
+-(= () (keys hm1))
+-(keys hm2)
+-(keys {"1" 1})
+-(vals hm1)
+-(= () (vals hm1))
+-(vals hm2)
+-(count (keys (assoc hm2 "b" 2 "c" 3)))
+-(get {:abc 123} :abc)
+-(contains? {:abc 123} :abc)
+-(contains? {:abcd 123} :abc)
+-(assoc {} :bcd 234)
+-(keyword? (nth (keys {:abc 123 :def 456}) 0))
+-(keyword? (nth (vals {"a" :abc "b" :def}) 0))
+-(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))
+-(get hm4 :a)
+-(get hm4 :b)
+-(get hm4 :c)
+-(contains? {:abc nil} :abc)
+-(assoc {} :bcd nil)
+-(str "A" {:abc "val"} "Z")
+-(str true "." false "." nil "." :keyw "." 'symb)
+-(pr-str "A" {:abc "val"} "Z")
+-(pr-str true "." false "." nil "." :keyw "." 'symb)
+-(def! s (str {:abc "val1" :def "val2"}))
+-(cond (= s "{:abc val1 :def val2}") true (= s "{:def val2 :abc val1}") true)
+-(def! p (pr-str {:abc "val1" :def "val2"}))
+-(cond (= p "{:abc \"val1\" :def \"val2\"}") true (= p "{:def \"val2\" :abc \"val1\"}") true)
+-(apply (fn* (& more) (list? more)) [1 2 3])
+-(apply (fn* (& more) (list? more)) [])
+-(apply (fn* (a & more) (list? more)) [1])
+-(throw {:msg "err2"})
+-(try* xyz)
+-(try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7)))
+-(def! hm3 (assoc hm2 "b" 2))
+-(count (keys hm3))
+-(count (vals hm3))
+-(dissoc hm3 "a")
+-(dissoc hm3 "a" "b")
+-(dissoc hm3 "a" "b" "c")
+-(count (keys hm3))
+-(dissoc {:cde 345 :fgh 456} :cde)
+-(dissoc {:cde nil :fgh 456} :cde)
+-(= {} {})
+-(= {} (hash-map))
+-(= {:a 11 :b 22} (hash-map :b 22 :a 11))
+-(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))
+-(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))
+-(= {:a 11 :b 22} (hash-map :b 23 :a 11))
+-(= {:a 11 :b 22} (hash-map :a 11))
+-(= {:a [11 22]} {:a (list 11 22)})
+-(= {:a 11 :b 22} (list :a 11 :b 22))
+-(= {} [])
+-(= [] {})
+-(keyword :abc)
+-(keyword? (first (keys {":abc" 123 ":def" 456})))
+-(def! bar (fn* [a] {:foo (get a :foo)}))
+-(bar {:foo (fn* [x] x)})
+-(bar {:foo 3})
+-(throw "err1")
+-(throw "err1")
+-(try* 123 (catch* e 456))
+-(try* abc (catch* exc (prn "exc is:" exc)))
+-(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))
+-(try* (nth () 1) (catch* exc (prn "exc is:" exc)))
+ (try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7)))
+-(try* (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))
+-(try* (try* (throw "e1") (catch* e (throw "e2"))) (catch* e "c2"))
+-(try* (map throw (list "my err")) (catch* exc exc))
+-(symbol? 'abc)
+-(symbol? "abc")
+-(nil? nil)
+-(nil? true)
+-(true? true)
+-(true? false)
+-(true? true?)
+-(false? false)
+-(false? true)
+-(apply + (list 2 3))
+-(apply + 4 (list 5))
+-(apply prn (list 1 2 "3" (list)))
+-(apply prn 1 2 (list "3" (list)))
+-(apply list (list))
+-(apply symbol? (list (quote two)))
+-(apply (fn* (a b) (+ a b)) (list 2 3))
+-(apply (fn* (a b) (+ a b)) 4 (list 5))
+-(def! nums (list 1 2 3))
+-(def! double (fn* (a) (* 2 a)))
+-(double 3)
+-(map double nums) 
+-(map (fn* (x) (symbol? x)) (list 1 (quote two) "three"))
+-(= () (map str ()))
+-(symbol? :abc)
+-(symbol? 'abc)
+-(symbol? "abc")
+-(symbol? (symbol "abc"))
+-(keyword? :abc)
+-(keyword? 'abc)
+-(keyword? "abc")
+-(keyword? "")
+-(keyword? (keyword "abc"))
+-(symbol "abc")
+-(keyword "abc")
+-(sequential? (list 1 2 3))
+-(sequential? [15])
+-(sequential? sequential?)
+-(sequential? nil)
+-(sequential? "abc")
+-(apply + 4 [5])
+-(apply prn 1 2 ["3" 4])
+-(apply list [])
+-(apply (fn* (a b) (+ a b)) [2 3])
+-(apply (fn* (a b) (+ a b)) 4 [5])
+-(map (fn* (a) (* 2 a)) [1 2 3])
+-(map (fn* [& args] (list? args)) [1 2])
+-(vector? [10 11])
+-(vector? '(12 13))
+-(vector 3 4 5)
+-(= [] (vector))
+-(map? {})
+-(map? '())
+-(map? [])
+-(map? 'abc)
+-(map? :abc)
+-(hash-map "a" 1)
+-{"a" 1}
+-(assoc {} "a" 1)
+-(get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a")
+-(def! hm1 (hash-map))
+-(map? hm1)
+-(map? 1)
+-(map? "abc")
+-(get nil "a")
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(def! hm2 (assoc hm1 "a" 1))
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(get hm2 "a")
+-(contains? hm2 "a")
+-(keys hm1)
+-(= () (keys hm1))
+-(keys hm2)
+-(keys {"1" 1})
+-(vals hm1)
+-(= () (vals hm1))
+-(vals hm2)
+-(count (keys (assoc hm2 "b" 2 "c" 3)))
+-(get {:abc 123} :abc)
+-(contains? {:abc 123} :abc)
+-(contains? {:abcd 123} :abc)
+-(assoc {} :bcd 234)
+-(keyword? (nth (keys {:abc 123 :def 456}) 0))
+-(keyword? (nth (vals {"a" :abc "b" :def}) 0))
+-(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))
+-(get hm4 :a)
+-(get hm4 :b)
+-(get hm4 :c)
+-(contains? {:abc nil} :abc)
+-(assoc {} :bcd nil)
+-(str "A" {:abc "val"} "Z")
+-(str true "." false "." nil "." :keyw "." 'symb)
+-(pr-str "A" {:abc "val"} "Z")
+-(pr-str true "." false "." nil "." :keyw "." 'symb)
+-(def! s (str {:abc "val1" :def "val2"}))
+-(cond (= s "{:abc val1 :def val2}") true (= s "{:def val2 :abc val1}") true)
+-(def! p (pr-str {:abc "val1" :def "val2"}))
+-(cond (= p "{:abc \"val1\" :def \"val2\"}") true (= p "{:def \"val2\" :abc \"val1\"}") true)
+-(apply (fn* (& more) (list? more)) [1 2 3])
+-(apply (fn* (& more) (list? more)) [])
+-(apply (fn* (a & more) (list? more)) [1])
+-(throw {:msg "err2"})
+-(try* xyz)
+-(try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7)))
+-(def! hm3 (assoc hm2 "b" 2))
+-(count (keys hm3))
+-(count (vals hm3))
+-(dissoc hm3 "a")
+-(dissoc hm3 "a" "b")
+-(dissoc hm3 "a" "b" "c")
+-(count (keys hm3))
+-(dissoc {:cde 345 :fgh 456} :cde)
+-(dissoc {:cde nil :fgh 456} :cde)
+-(= {} {})
+-(= {} (hash-map))
+-(= {:a 11 :b 22} (hash-map :b 22 :a 11))
+-(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))
+-(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))
+-(= {:a 11 :b 22} (hash-map :b 23 :a 11))
+-(= {:a 11 :b 22} (hash-map :a 11))
+-(= {:a [11 22]} {:a (list 11 22)})
+-(= {:a 11 :b 22} (list :a 11 :b 22))
+-(= {} [])
+-(= [] {})
+-(keyword :abc)
+-(keyword? (first (keys {":abc" 123 ":def" 456})))
+-(def! bar (fn* [a] {:foo (get a :foo)}))
+-(bar {:foo (fn* [x] x)})
+-(bar {:foo 3})
+- (try* abc (catch* exc (prn "exc is:" exc)))
+-(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))
+ (throw "err1")
+ (try* 123 (catch* e 456))
+ (try* abc (catch* exc (prn "exc is:" exc)))
+@@ -1275,145 +138,9 @@
+ (def! bar (fn* [a] {:foo (get a :foo)}))
+ (bar {:foo (fn* [x] x)})
+ (bar {:foo 3})
+-(throw "err1")
+-(try* 123 (catch* e 456))
+-(try* abc (catch* exc (prn "exc is:" exc)))
+-(try* (abc 1 2) (catch* exc (prn "exc is:" exc)))
+-(try* (nth () 1) (catch* exc (prn "exc is:" exc)))
++
+ (try* (throw "my exception") (catch* exc (do (prn "exc:" exc) 7)))
+-(try* (do (try* "t1" (catch* e "c1")) (throw "e1")) (catch* e "c2"))
+-(try* (try* (throw "e1") (catch* e (throw "e2"))) (catch* e "c2"))
+-(try* (map throw (list "my err")) (catch* exc exc))
+-(symbol? 'abc)
+-(symbol? "abc")
+-(nil? nil)
+-(nil? true)
+-(true? true)
+-(true? false)
+-(true? true?)
+-(false? false)
+-(false? true)
+-(apply + (list 2 3))
+-(apply + 4 (list 5))
+-(apply prn (list 1 2 "3" (list)))
+-(apply prn 1 2 (list "3" (list)))
+-(apply list (list))
+-(apply symbol? (list (quote two)))
+-(apply (fn* (a b) (+ a b)) (list 2 3))
+-(apply (fn* (a b) (+ a b)) 4 (list 5))
+-(def! nums (list 1 2 3))
+-(def! double (fn* (a) (* 2 a)))
+-(double 3)
+-(map double nums) 
+-(map (fn* (x) (symbol? x)) (list 1 (quote two) "three"))
+-(= () (map str ()))
+-(symbol? :abc)
+-(symbol? 'abc)
+-(symbol? "abc")
+-(symbol? (symbol "abc"))
+-(keyword? :abc)
+-(keyword? 'abc)
+-(keyword? "abc")
+-(keyword? "")
+-(keyword? (keyword "abc"))
+-(symbol "abc")
+-(keyword "abc")
+-(sequential? (list 1 2 3))
+-(sequential? [15])
+-(sequential? sequential?)
+-(sequential? nil)
+-(sequential? "abc")
+-(apply + 4 [5])
+-(apply prn 1 2 ["3" 4])
+-(apply list [])
+-(apply (fn* (a b) (+ a b)) [2 3])
+-(apply (fn* (a b) (+ a b)) 4 [5])
+-(map (fn* (a) (* 2 a)) [1 2 3])
+-(map (fn* [& args] (list? args)) [1 2])
+-(vector? [10 11])
+-(vector? '(12 13))
+-(vector 3 4 5)
+-(= [] (vector))
+-(map? {})
+-(map? '())
+-(map? [])
+-(map? 'abc)
+-(map? :abc)
+-(hash-map "a" 1)
+-{"a" 1}
+-(assoc {} "a" 1)
+-(get (assoc (assoc {"a" 1 } "b" 2) "c" 3) "a")
+-(def! hm1 (hash-map))
+-(map? hm1)
+-(map? 1)
+-(map? "abc")
+-(get nil "a")
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(def! hm2 (assoc hm1 "a" 1))
+-(get hm1 "a")
+-(contains? hm1 "a")
+-(get hm2 "a")
+-(contains? hm2 "a")
+-(keys hm1)
+-(= () (keys hm1))
+-(keys hm2)
+-(keys {"1" 1})
+-(vals hm1)
+-(= () (vals hm1))
+-(vals hm2)
+-(count (keys (assoc hm2 "b" 2 "c" 3)))
+-(get {:abc 123} :abc)
+-(contains? {:abc 123} :abc)
+-(contains? {:abcd 123} :abc)
+-(assoc {} :bcd 234)
+-(keyword? (nth (keys {:abc 123 :def 456}) 0))
+-(keyword? (nth (vals {"a" :abc "b" :def}) 0))
+-(def! hm4 (assoc {:a 1 :b 2} :a 3 :c 1))
+-(get hm4 :a)
+-(get hm4 :b)
+-(get hm4 :c)
+-(contains? {:abc nil} :abc)
+-(assoc {} :bcd nil)
+-(str "A" {:abc "val"} "Z")
+-(str true "." false "." nil "." :keyw "." 'symb)
+-(pr-str "A" {:abc "val"} "Z")
+-(pr-str true "." false "." nil "." :keyw "." 'symb)
+-(def! s (str {:abc "val1" :def "val2"}))
+-(cond (= s "{:abc val1 :def val2}") true (= s "{:def val2 :abc val1}") true)
+-(def! p (pr-str {:abc "val1" :def "val2"}))
+-(cond (= p "{:abc \"val1\" :def \"val2\"}") true (= p "{:def \"val2\" :abc \"val1\"}") true)
+-(apply (fn* (& more) (list? more)) [1 2 3])
+-(apply (fn* (& more) (list? more)) [])
+-(apply (fn* (a & more) (list? more)) [1])
+-(throw {:msg "err2"})
+-(try* xyz)
+-(try* (throw (list 1 2 3)) (catch* exc (do (prn "err:" exc) 7)))
+-(def! hm3 (assoc hm2 "b" 2))
+-(count (keys hm3))
+-(count (vals hm3))
+-(dissoc hm3 "a")
+-(dissoc hm3 "a" "b")
+-(dissoc hm3 "a" "b" "c")
+-(count (keys hm3))
+-(dissoc {:cde 345 :fgh 456} :cde)
+-(dissoc {:cde nil :fgh 456} :cde)
+-(= {} {})
+-(= {} (hash-map))
+-(= {:a 11 :b 22} (hash-map :b 22 :a 11))
+-(= {:a 11 :b [22 33]} (hash-map :b [22 33] :a 11))
+-(= {:a 11 :b {:c 33}} (hash-map :b {:c 33} :a 11))
+-(= {:a 11 :b 22} (hash-map :b 23 :a 11))
+-(= {:a 11 :b 22} (hash-map :a 11))
+-(= {:a [11 22]} {:a (list 11 22)})
+-(= {:a 11 :b 22} (list :a 11 :b 22))
+-(= {} [])
+-(= [] {})
+-(keyword :abc)
+-(keyword? (first (keys {":abc" 123 ":def" 456})))
+-(def! bar (fn* [a] {:foo (get a :foo)}))
+-(bar {:foo (fn* [x] x)})
+-(bar {:foo 3})
++
+ (throw "err1")
+ (try* 123 (catch* e 456))
+ (try* abc (catch* exc (prn "exc is:" exc)))
+@@ -1553,23 +280,7 @@
+ (def! bar (fn* [a] {:foo (get a :foo)}))
+ (bar {:foo (fn* [x] x)})
+ (bar {:foo 3})
+-___
+-(___)
+-(let* [a 1 b 2] (do (___)))
+-nil
+-(nil? 1)
+-(nil? nil)
+-sum
+-map
+-reduce
+-fold
+-(atom 1)
+-(1)
+-[1]
+-(map [1 2 3] (fn
+-(def! add2 (fn* [a] (+ a 2)))
+-(map [ 1 2 3] add2)
+-(map [] [1 2] add2)
+-add2
+-(add2 2)
+-(map add2 [1 2 3])
++asd
++hello
++hello
++asdasdasda
+Index: ../deno/deno.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>{\n  \"imports\": {\n    \"@std/cli\": \"jsr:@std/cli@^1.0.1\"\n  },\n  \"tasks\": {\n      \"test:step0\": \"cd ../.. && make 'test^deno^step0'\",\n      \"test:step1\": \"cd ../.. && make 'test^deno^step1'\",\n      \"test:step2\": \"cd ../.. && make 'test^deno^step2'\",\n      \"test:step3\": \"cd ../.. && make 'test^deno^step3'\",\n      \"test:step4\": \"cd ../.. && make 'test^deno^step4'\",\n      \"test:step5\": \"cd ../.. && make 'test^deno^step5'\",\n      \"test:step6\": \"cd ../.. && make 'test^deno^step6'\",\n      \"test:step7\": \"cd ../.. && make 'test^deno^step7'\",\n      \"test:step8\": \"cd ../.. && make 'test^deno^step8'\",\n      \"test:step9\": \"cd ../.. && make 'test^deno^step9'\"\n  }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/../deno/deno.json b/../deno/deno.json
+--- a/../deno/deno.json	(revision aca0b58da07847c2bb872827d75c400ade4be369)
++++ b/../deno/deno.json	(date 1722328584582)
+@@ -12,6 +12,7 @@
+       "test:step6": "cd ../.. && make 'test^deno^step6'",
+       "test:step7": "cd ../.. && make 'test^deno^step7'",
+       "test:step8": "cd ../.. && make 'test^deno^step8'",
+-      "test:step9": "cd ../.. && make 'test^deno^step9'"
++      "test:step9": "cd ../.. && make 'test^deno^step9'",
++      "test:stepA": "cd ../.. && make 'test^deno^stepA'"
+   }
+ }

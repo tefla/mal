@@ -1,6 +1,5 @@
 
 defmodule Mal.Reader do
-  import Mal.Core
   import Mal.Types
 
   def read_str(input) do

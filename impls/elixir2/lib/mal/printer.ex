@@ -4,6 +4,7 @@ defmodule Mal.Printer do
   def print_str(mal, false) when is_bitstring(mal), do: mal
   def print_str(mal, true) when is_bitstring(mal), do: inspect(mal)
   def print_str(mal, true) when is_function(mal), do: "#Function"
+  def print_str(%Mal.Function{value: _value}, _), do: "#Function"
   def print_str({:list, mal}, print_readably), do: "(#{print_list(mal, print_readably)})"
   def print_str({:vector, mal}, print_readably), do: "[#{print_list(mal, print_readably)}]"
   def print_str({:map, mal}, print_readably), do: "{#{print_map(mal, print_readably)}}"
