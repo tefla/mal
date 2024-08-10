@@ -1,5 +1,5 @@
-
 defmodule Mal.Env do
+  import Mal.Types
   def new(outer \\ nil, bindings \\ [], exprs \\ [])
   def new(outer, bindings, exprs) do
     {:ok, pid} = Agent.start_link(fn ->
@@ -10,6 +10,10 @@ defmodule Mal.Env do
   end
 
   defp set_binding(env, [], []), do: env
+  defp set_binding(env, [{:symbol, "&"} , {:symbol, key}], values) do
+    set(env, key, list(values))
+    env
+  end
   defp set_binding(env, [{:symbol, key}| keys], [value | values]) do
     set(env, key, value)
     set_binding(env, keys, values)

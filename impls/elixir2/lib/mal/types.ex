@@ -14,11 +14,6 @@ defmodule Mal.Types do
   def list(ast) do
     {:list, ast}
   end
-  def list?([{:list, _}, _]), do: true
-  def list?(x) do
-    IO.inspect(x)
-    false
-  end
 
   def vector(ast) do
     {:vector, ast}
