@@ -5,13 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ef914ef1-ed5e-4653-bd63-8275fa7cc0f8" name="Changes" comment="ZXC">
+      <change beforePath="$PROJECT_DIR$/../elixir2/lib/mal/atom.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mal/atom.ex" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../elixir2/lib/mal/core.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mal/core.ex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../elixir2/lib/mal/env.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mal/env.ex" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../elixir2/lib/mal/types.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mal/types.ex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../elixir2/lib/mix/tasks/step4_if_fn_do.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mix/tasks/step4_if_fn_do.ex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_19_07_2024,_16_14_[Changes]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_19_07_2024__16_14__Changes_.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../elixir2/mix.exs" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/mix.exs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

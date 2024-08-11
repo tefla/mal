@@ -26,11 +26,44 @@ defmodule Mal.Core do
       "println" => &println/1,
       "count" => &count/1,
       "empty?" => &empty/1,
+      "read-string" => &read_string/1,
+      "slurp" => &slurp/1,
+      "atom" => &atom/1,
+      "deref" => &deref/1,
+      "reset!" => &reset/1,
+      "swap!" => &swap/1,
+      "atom?" => &atom?/1,
+      "cons" => &cons/1,
+      "concat" => &concat/1,
+      "vec" => &vec/1,
     }
 
     convert(internal)
 
   end
+  # Atom functions
+  defp atom([value]) do
+    new_atom = Mal.Atom.new(value)
+    {:atom, new_atom}
+  end
+  defp deref([{:atom, atom}]) do
+    Mal.Atom.deref(atom)
+  end
+  defp reset([{:atom, atom}, value]) do
+    Mal.Atom.reset(atom, value)
+  end
+  defp swap([{:atom, pid}, fun | args]) do
+    Mal.Atom.swap(pid, fun, args)
+  end
+
+  # Bootstrap functions
+  defp read_string([str]) do
+    Mal.Reader.read_str(str)
+  end
+  defp slurp([file]) do
+    File.read!(file)
+  end
+
   defp list?([{:list, _}]), do: true
   defp list?(_), do: false
 
@@ -42,6 +75,19 @@ defmodule Mal.Core do
   defp empty([{type, list}]) when type in [:list, :vector] do
     Enum.empty?(list)
   end
+  defp vec([{type, list}]) when type in [:list, :vector] do
+    {:vector, list}
+  end
+  # cons: this function takes a list as its second parameter and returns a new list that has the first argument prepended to it.
+  defp cons([a, {type, b}]) when type in [:list, :vector] do
+    {:list, [a | b]}
+  end
+
+  #concat: this functions takes 0 or more lists as parameters and returns a new list that is a concatenation of all the list parameters.
+  defp concat(lists) do
+    {:list, Enum.reduce(lists, [], fn {_, list}, acc -> acc ++ list end)}
+  end
+
 
   ## Equality functions
   # when it is a map

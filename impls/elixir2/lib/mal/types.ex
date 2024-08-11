@@ -20,8 +20,12 @@ defmodule Mal.Types do
   end
   def vector?({:vector, _}), do: true
   def vector?(_), do: false
-end
 
+  def atom?([{:atom, _}]), do: true
+  def atom?(_), do: false
+
+end
 defmodule Mal.Function do
+
   defstruct value: nil, macro: false
 end
