@@ -28,7 +28,11 @@ defmodule Mix.Tasks.Step8Macros do
             (slurp f)
             "\nnil)")))))
     """, env)
-
+    read_eval_print("""
+      (defmacro! cond (fn* (& xs)
+        (if (> (count xs) 0)
+          (list 'if (first xs) (if (> (count xs) 1) (nth xs 1) (throw "odd number of forms to cond")) (cons 'cond (rest (rest xs)))))))
+    """, env)
     read_eval_print("(vec (list))", env)
     read_eval_print("""
       (defmacro! and (fn* (a b)
@@ -98,16 +102,25 @@ defmodule Mix.Tasks.Step8Macros do
     end
   end
 
-  defp eval({:list, []} = empty_list, _env), do: empty_list
+  defp eval(ast, env) do
+    case Mal.Env.get(env, "DEBUG") do
+      {:ok, _} -> IO.inspect(ast)
+      _ -> nil
+    end
 
-  defp eval({:list, _ast} = ast, env) do
+    _eval(ast, env)
+  end
+
+  defp _eval({:list, []} = empty_list, _env), do: empty_list
+
+  defp _eval({:list, _ast} = ast, env) do
     case macroexpand(ast, env) do
       {:list, list} -> eval_list(list, env)
       ast -> eval_ast(ast, env)
     end
   end
 
-  defp eval(input, env) do
+  defp _eval(input, env) do
     eval_ast(input, env)
   end
 

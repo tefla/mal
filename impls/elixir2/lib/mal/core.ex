@@ -36,6 +36,9 @@ defmodule Mal.Core do
       "cons" => &cons/1,
       "concat" => &concat/1,
       "vec" => &vec/1,
+      "nth" => &nth/1,
+      "first" => &first/1,
+      "rest" => &rest/1,
     }
 
     convert(internal)
@@ -63,6 +66,22 @@ defmodule Mal.Core do
   defp slurp([file]) do
     File.read!(file)
   end
+
+  defp nth([{type, list}, n]) when type in [:vector, :list] do
+    case Enum.fetch(list, n) do
+      {:ok, value} -> value
+      :error -> throw({:error, "Index out of bounds"})
+    end
+
+  end
+  defp first([{type, [h|_t]}]) when type in [:vector, :list] do
+    h
+  end
+  defp first([_]), do: nil
+  defp rest([{type, [_h|t]}]) when type in [:vector, :list] do
+    {:list, t}
+  end
+  defp rest([_]), do: {:list, []}
 
   defp list?([{:list, _}]), do: true
   defp list?(_), do: false
