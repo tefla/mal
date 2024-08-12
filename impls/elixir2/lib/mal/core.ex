@@ -71,7 +71,7 @@ defmodule Mal.Core do
       "seq" => &seq/1,
       "conj" => &conj/1,
 
-      "." => &dot/1
+      "." => &alias_ns/1
     }
 
     convert(internal)
@@ -233,9 +233,8 @@ defmodule Mal.Core do
 
 
 
-  defp dot([object,  property]) do
-    :"Elixir.#{object}.#{property}"
-
+  defp alias_ns([ns]) do
+    :"Elixir.#{ns}"
   end
   ## Equality functions
   # when it is a map

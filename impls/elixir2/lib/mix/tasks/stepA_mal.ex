@@ -46,7 +46,7 @@ defmodule Mix.Tasks.StepAMal do
       (println (str "Mal [" *host-language* "]"))
     """, env)
     read_eval_print("""
-       (. :Mal :Env)
+       (println (. :Mal.Core ns))
     """, env)
     case args do
       [file | args] ->
