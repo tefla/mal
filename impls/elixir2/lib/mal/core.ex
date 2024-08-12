@@ -39,6 +39,22 @@ defmodule Mal.Core do
       "nth" => &nth/1,
       "first" => &first/1,
       "rest" => &rest/1,
+      "throw" => &mal_throw/1,
+      "apply" => &apply/1,
+      "map" => &map/1,
+      "nil?" => &nil?/1,
+      "true?" => &true?/1,
+      "false?" => &false?/1,
+      "symbol?" => &symbol?/1,
+      "symbol" => &symbol/1,
+      "keyword" => &keyword/1,
+      "keyword?" => &keyword?/1,
+      "vector" => &vector/1,
+      "vector?" => &vector?/1,
+      "sequential?" => &sequential?/1,
+      "hash-map" => &hash_map/1,
+      "map?" => &map?/1,
+      "assoc" => &assoc/1,
     }
 
     convert(internal)
@@ -67,12 +83,14 @@ defmodule Mal.Core do
     File.read!(file)
   end
 
-  defp nth([{type, list}, n]) when type in [:vector, :list] do
+  defp nth([{_, list}, n])  do
     case Enum.fetch(list, n) do
       {:ok, value} -> value
       :error -> throw({:error, "Index out of bounds"})
     end
-
+  end
+  defp mal_throw([ast]) do
+    throw({:error, ast})
   end
   defp first([{type, [h|_t]}]) when type in [:vector, :list] do
     h
@@ -107,6 +125,54 @@ defmodule Mal.Core do
     {:list, Enum.reduce(lists, [], fn {_, list}, acc -> acc ++ list end)}
   end
 
+  defp apply([%Mal.Function{value: function} | tail]), do: do_apply(function, tail)
+  defp apply([function | tail]), do: do_apply(function, tail)
+  #apply: takes at least two arguments. The first argument is a function and the last argument is a list (or vector). The function may be either a built-in core function, an user function constructed with the fn* special form, or a macro, not distinguished from the underlying user function). The arguments between the function and the last argument (if there are any) are concatenated with the final argument to create the arguments that are used to call the function. The apply function allows a function to be called with arguments that are contained in a list (or vector). In other words, (apply F A B [C D]) is equivalent to (F A B C D).
+  defp do_apply(function, tail) do
+    [{_type , ast} | rev_args] = Enum.reverse(tail)
+    args = Enum.reverse(rev_args)
+    func_args = args ++ ast
+    function.(func_args)
+  end
+
+  defp map([%Mal.Function{value: f}, {type, list}]) when type in [:list, :vector] do
+    new_list = for el <- list, into: [] do
+      f.([el])
+    end
+    {:list, new_list}
+  end
+  defp map([f, {type, list}]) when type in [:list, :vector] do
+    new_list = for el <- list, into: [] do
+      f.([el])
+    end
+    {:list, new_list}
+  end
+
+  defp nil?([nil]), do: true
+  defp nil?(_), do: false
+
+  defp true?([true]), do: true
+  defp true?(_), do: false
+  defp false?([false]), do: true
+  defp false?(_), do: false
+  defp symbol?([{type, _}]), do: type == :symbol
+  defp symbol?(_), do: false
+  defp atom?([{type, _}]), do: type == :atom
+  defp atom?(_), do: false
+  defp keyword?([{type, _}]), do: type == :keyword
+  defp keyword?(_), do: false
+  defp vector?([{type, _}]), do: type == :vector
+  defp vector?(_), do: false
+  defp sequential?([{type, _}]), do: type in [:list, :vector]
+  defp sequential?(_), do: false
+  defp map?([{type, _}]), do: type == :map
+  defp map?(_), do: false
+
+  defp assoc([{:map, map}, first, second| rest]) do
+    new_map = Map.put(map, first, second)
+    assoc([{:map, new_map} | rest])
+  end
+  defp assoc([{:map, map}]), do: {:map, map}
 
   ## Equality functions
   # when it is a map
