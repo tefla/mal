@@ -2,11 +2,11 @@ defmodule Mal.Types do
   def integer?(input) do
     Regex.match?(~r/^-?[0-9]+$/, input)
   end
-  def hash_map(ast) do
-    map = ast
-      |> Enum.chunk_every(2)
-      |> Enum.map(&List.to_tuple/1)
-      |> Enum.into(%{})
+  def hash_map(list) do
+    map = list
+    |> Enum.chunk_every(2)
+    |> Enum.map(&List.to_tuple/1)
+    |> Enum.into(%{})
 
     {:map, map}
   end
@@ -14,19 +14,14 @@ defmodule Mal.Types do
   def list(ast) do
     {:list, ast}
   end
-  def list?([{:list, _}, _]), do: true
-  def list?(x) do
-    IO.inspect(x)
-    false
-  end
+  def vector(args), do: {:vector, args}
+  def symbol([name]), do: {:symbol, name}
+  def keyword([name]), do: {:keyword, name}
 
-  def vector(ast) do
-    {:vector, ast}
-  end
-  def vector?({:vector, _}), do: true
-  def vector?(_), do: false
+
+
 end
-
 defmodule Mal.Function do
+
   defstruct value: nil, macro: false
 end

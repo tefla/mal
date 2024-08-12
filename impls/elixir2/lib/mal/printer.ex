@@ -12,6 +12,12 @@ defmodule Mal.Printer do
   def print_str({:error, msg}, _), do: "Error: #{msg}"
   def print_str(mal, _) when is_atom(mal), do: inspect(mal)
   def print_str(mal, _) when is_number(mal), do: inspect(mal)
+  def print_str({:atom, atom}, _) do
+    val = Mal.Atom.deref(atom)
+    "(atom #{val})"
+  end
+
+  def print_str(mal, _), do: inspect(mal)
 
   defp print_list(list, print_readably) do
     list

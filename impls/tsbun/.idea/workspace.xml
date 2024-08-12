@@ -5,10 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ef914ef1-ed5e-4653-bd63-8275fa7cc0f8" name="Changes" comment="ZXC">
+      <change beforePath="$PROJECT_DIR$/../elixir2/lib/mal/atom.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mal/atom.ex" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../elixir2/lib/mal/core.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mal/core.ex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../elixir2/lib/mal/printer.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mal/printer.ex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../elixir2/lib/mal/reader.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mal/reader.ex" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../elixir2/lib/mix/tasks/step1_read_print.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mix/tasks/step1_read_print.ex" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../elixir2/lib/mal/types.ex" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/lib/mal/types.ex" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../elixir2/mix.exs" beforeDir="false" afterPath="$PROJECT_DIR$/../elixir2/mix.exs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

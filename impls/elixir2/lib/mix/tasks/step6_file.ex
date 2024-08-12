@@ -1,15 +1,41 @@
 
-defmodule Mix.Tasks.Step4IfFnDo do
+defmodule Mix.Tasks.Step6File do
   import Mal.Types
-  def run(_) do
+  def run(args) do
+    # Repl loop
     env = Mal.Env.new()
-    Mal.Env.merge(env, Mal.Core.ns())
-    read_eval_print("(def! not (fn* (a) (if a false true)))", env)
-    read_eval_print("(def! rec (fn* (c) (if (= c 0) (println \"Done\") (do  (rec (- c 1))) )))", env)
-    read_eval_print("(rec 10)", env)
+
+    bootstrap_env(args, env)
     loop(env)
   end
+  defp load_file(file, env) do
+    read_eval_print("(load-file \"#{file}\")", env)
+    exit(:normal)
+  end
+  defp bootstrap_env(args, env) do
+    Mal.Env.merge(env, Mal.Core.ns())
+    Mal.Env.set(env, "eval", %Mal.Function{value: fn ([ast]) -> eval(ast, env) end})
+    read_eval_print("""
+      (def! not (fn* (a)
+        (if a false true)))
+    """, env)
+    read_eval_print("""
+      (def! load-file (fn* (f)
+        (eval (read-string
+          (str
+            "(do "
+            (slurp f)
+            "\nnil)")))))
+    """, env)
 
+    case args do
+      [file | args] ->
+        Mal.Env.set(env, "*ARGV*", {:list, args})
+        load_file(file, env)
+      _ ->
+        Mal.Env.set(env, "*ARGV*", {:list, []})
+    end
+  end
 
   defp loop(env) do
     IO.write(:stdio, "user> ")
@@ -79,7 +105,6 @@ defmodule Mix.Tasks.Step4IfFnDo do
 
     eval(List.last(ast), env)
   end
-
 
   # Evaluate the condition, if true, evaluate the true_case, else evaluate the false_case
   defp eval_list([{:symbol, "if"}, condition, true_case | false_case], env) do

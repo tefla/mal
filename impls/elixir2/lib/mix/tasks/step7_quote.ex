@@ -1,15 +1,42 @@
 
-defmodule Mix.Tasks.Step4IfFnDo do
+defmodule Mix.Tasks.Step7Quote do
   import Mal.Types
-  def run(_) do
+  def run(args) do
+    # Repl loop
     env = Mal.Env.new()
-    Mal.Env.merge(env, Mal.Core.ns())
-    read_eval_print("(def! not (fn* (a) (if a false true)))", env)
-    read_eval_print("(def! rec (fn* (c) (if (= c 0) (println \"Done\") (do  (rec (- c 1))) )))", env)
-    read_eval_print("(rec 10)", env)
+
+    bootstrap_env(args, env)
     loop(env)
   end
+  defp load_file(file, env) do
+    read_eval_print("(load-file \"#{file}\")", env)
+    exit(:normal)
+  end
+  defp bootstrap_env(args, env) do
+    Mal.Env.merge(env, Mal.Core.ns())
+    Mal.Env.set(env, "eval", %Mal.Function{value: fn ([ast]) -> eval(ast, env) end})
+    read_eval_print("""
+      (def! not (fn* (a)
+        (if a false true)))
+    """, env)
+    read_eval_print("""
+      (def! load-file (fn* (f)
+        (eval (read-string
+          (str
+            "(do "
+            (slurp f)
+            "\nnil)")))))
+    """, env)
 
+    read_eval_print("(vec (list))", env)
+    case args do
+      [file | args] ->
+        Mal.Env.set(env, "*ARGV*", {:list, args})
+        load_file(file, env)
+      _ ->
+        Mal.Env.set(env, "*ARGV*", {:list, []})
+    end
+  end
 
   defp loop(env) do
     IO.write(:stdio, "user> ")
@@ -80,7 +107,6 @@ defmodule Mix.Tasks.Step4IfFnDo do
     eval(List.last(ast), env)
   end
 
-
   # Evaluate the condition, if true, evaluate the true_case, else evaluate the false_case
   defp eval_list([{:symbol, "if"}, condition, true_case | false_case], env) do
     case eval(condition, env) do
@@ -102,13 +128,37 @@ defmodule Mix.Tasks.Step4IfFnDo do
     %Mal.Function{value: closure}
   end
 
+  # Quoting and Quasi-quoting
+  defp eval_list([{:symbol, "quote"}, ast], _), do: ast
 
-
+  defp eval_list([{:symbol, "quasiquote"}, ast], env) do
+    ast
+    |> quasiquote
+    |> eval(env)
+  end
+  defp eval_list([{:symbol, "quasiquoteexpand"}, ast], _) do
+    quasiquote(ast)
+  end
   defp eval_list(ast, env) do
     {:list, [func | args]} = eval_ast({:list, ast}, env)
     func.value.(args)
   end
 
+  defp quasiquote({:list, [{:symbol, "unquote"}, ast]}), do: ast
+  defp quasiquote({:list, ast}), do: qq_foldr(ast)
+  defp quasiquote({:vector, ast}), do: list([{:symbol, "vec"}, qq_foldr(ast)])
+  defp quasiquote({:symbol, ast}), do: list([{:symbol, "quote"}, {:symbol, ast}])
+  defp quasiquote({:map, ast}), do: list([{:symbol, "quote"}, {:map, ast}])
+  defp quasiquote(ast), do: ast
+
+
+  defp qq_foldr([]), do: list([])
+  defp qq_foldr([head | tail]), do: qq_loop(head, qq_foldr(tail))
+
+  defp qq_loop({:list, [{:symbol, "splice-unquote"}, ast]}, acc), do: list([{:symbol, "concat"}, ast, acc])
+  defp qq_loop(ast, acc), do: list([{:symbol, "cons"}, quasiquote(ast), acc])
+
+#  defp qq_loop([])
   defp eval_bindings([], _), do: []
   defp eval_bindings([{:symbol, key}, value | rest], env) do
     Mal.Env.set(env, key, eval(value, env))
