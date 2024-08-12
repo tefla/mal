@@ -1,5 +1,5 @@
 
-defmodule Mix.Tasks.Step9Try do
+defmodule Mix.Tasks.StepAMal do
   alias Mal.Function
   import Mal.Types
   def run(args) do
@@ -16,6 +16,9 @@ defmodule Mix.Tasks.Step9Try do
   defp bootstrap_env(args, env) do
     Mal.Env.merge(env, Mal.Core.ns())
     Mal.Env.set(env, "eval", %Mal.Function{value: fn ([ast]) -> eval(ast, env) end})
+    read_eval_print("""
+      (def! *host-language* "Elixir2")
+    """, env)
     read_eval_print("""
       (def! not (fn* (a)
         (if a false true)))
@@ -40,9 +43,11 @@ defmodule Mix.Tasks.Step9Try do
     """, env)
 
     read_eval_print("""
-       (def! add2 (fn* [x] (+ x 2)))
+      (println (str "Mal [" *host-language* "]"))
     """, env)
-
+    read_eval_print("""
+       (. :Mal :Env)
+    """, env)
     case args do
       [file | args] ->
         Mal.Env.set(env, "*ARGV*", {:list, args})

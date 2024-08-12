@@ -48,13 +48,30 @@ defmodule Mal.Core do
       "symbol?" => &symbol?/1,
       "symbol" => &symbol/1,
       "keyword" => &keyword/1,
-      "keyword?" => &keyword?/1,
+      "keyword?" => fn [kw] -> is_atom(kw) end,
       "vector" => &vector/1,
       "vector?" => &vector?/1,
       "sequential?" => &sequential?/1,
       "hash-map" => &hash_map/1,
       "map?" => &map?/1,
       "assoc" => &assoc/1,
+      "dissoc" => &dissoc/1,
+      "keys" => &keys/1,
+      "vals" => &values/1,
+      "get" => &get/1,
+      "contains?" => &contains_key/1,
+      "readline" => &readline/1,
+
+      "time-ms" => &time_ms/1,
+      "meta" => &meta/1,
+      "with-meta" => &with_meta/1,
+      "fn?" => &fn?/1,
+      "string?" => &string?/1,
+      "number?" => &number?/1,
+      "seq" => &seq/1,
+      "conj" => &conj/1,
+
+      "." => &dot/1
     }
 
     convert(internal)
@@ -159,8 +176,6 @@ defmodule Mal.Core do
   defp symbol?(_), do: false
   defp atom?([{type, _}]), do: type == :atom
   defp atom?(_), do: false
-  defp keyword?([{type, _}]), do: type == :keyword
-  defp keyword?(_), do: false
   defp vector?([{type, _}]), do: type == :vector
   defp vector?(_), do: false
   defp sequential?([{type, _}]), do: type in [:list, :vector]
@@ -174,6 +189,54 @@ defmodule Mal.Core do
   end
   defp assoc([{:map, map}]), do: {:map, map}
 
+  defp dissoc([{:map, map}| keys]), do:
+    {:map, Map.drop(map, keys)}
+
+  defp keys([{:map, map}]), do:
+    {:list, Map.keys(map)}
+
+  defp values([{:map, map}]), do:
+    {:list, Map.values(map)}
+
+  defp get([{:map, map}, key]) do
+    case Map.fetch(map, key) do
+      {:ok, value} -> value
+      :error -> nil
+    end
+  end
+  defp get([_map, _key]), do: nil
+  defp contains_key([{:map, map}, key]) do
+    Map.has_key?(map, key)
+  end
+  defp keyword([kw]) when is_atom(kw), do: kw
+  defp keyword([str]) do
+    String.to_atom(str)
+  end
+
+
+
+  defp readline([prompt]) do
+    IO.write(prompt)
+    IO.read(:line)
+  end
+
+  # TODO
+  # time-ms, meta, with-meta, fn? string?, number?, seq, and conj
+  defp time_ms([_]), do: :not_implemented
+  defp meta([_]), do: :not_implemented
+  defp with_meta([_]), do: :not_implemented
+  defp fn?([_]), do: :not_implemented
+  defp string?([_]), do: :not_implemented
+  defp number?([_]), do: :not_implemented
+  defp seq([_]), do: :not_implemented
+  defp conj([_]), do: :not_implemented
+
+
+
+  defp dot([object,  property]) do
+    :"Elixir.#{object}.#{property}"
+
+  end
   ## Equality functions
   # when it is a map
   defp convert_list({type, a}) when type == :map do

@@ -9,12 +9,12 @@ defmodule Mal.Printer do
   def print_str({:vector, mal}, print_readably), do: "[#{print_list(mal, print_readably)}]"
   def print_str({:map, mal}, print_readably), do: "{#{print_map(mal, print_readably)}}"
   def print_str({:symbol, mal}, _), do: mal
-  def print_str({:error, msg}, _), do: "Error: #{msg}"
+  def print_str({:error, msg}, _), do: "Error: #{print_str(msg)}"
   def print_str(mal, _) when is_atom(mal), do: inspect(mal)
   def print_str(mal, _) when is_number(mal), do: inspect(mal)
   def print_str({:atom, atom}, _) do
     val = Mal.Atom.deref(atom)
-    "(atom #{val})"
+    "(atom #{print_str(val)})"
   end
 
   def print_str(mal, _), do: inspect(mal)

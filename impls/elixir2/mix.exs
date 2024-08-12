@@ -8,12 +8,12 @@ defmodule Mal.MixProject do
       elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-       default_task: "step9_try",
+       default_task: "stepA_mal",
        escript: escript()
     ]
   end
   def escript do
-    [main_module: Mix.Tasks.Step9Try]
+    [main_module: Mix.Tasks.StepAMal]
   end
 
   # Run "mix help compile.app" to learn about applications.

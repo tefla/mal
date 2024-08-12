@@ -16,7 +16,6 @@ defmodule Mal.Types do
   end
   def vector(args), do: {:vector, args}
   def symbol([name]), do: {:symbol, name}
-  def keyword([name]), do: {:keyword, name}
 
 
 
