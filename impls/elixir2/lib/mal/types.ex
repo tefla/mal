@@ -8,19 +8,26 @@ defmodule Mal.Types do
     |> Enum.map(&List.to_tuple/1)
     |> Enum.into(%{})
 
-    {:map, map}
+    {:map, map, nil}
   end
 
   def list(ast) do
-    {:list, ast}
+    {:list, ast, nil}
   end
-  def vector(args), do: {:vector, args}
+  def list?([{:list, _}]), do: true
+  def list?(_), do: false
+
+  def vector(args), do: {:vector, args, nil}
+  def vector?([{type, _, _meta}]), do: type == :vector
+  def vector?(_), do: false
   def symbol([name]), do: {:symbol, name}
+  def symbol?([{type, _, _meta}]), do: type == :symbol
+  def symbol?(_), do: false
 
 
 
 end
 defmodule Mal.Function do
 
-  defstruct value: nil, macro: false
+  defstruct value: nil, macro: false, meta: nil
 end

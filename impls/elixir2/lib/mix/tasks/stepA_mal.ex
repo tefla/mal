@@ -76,19 +76,19 @@ defmodule Mix.Tasks.StepAMal do
       :not_found -> throw({:error , "'#{ast}' not found"})
     end
   end
-  defp eval_ast({:list, ast}, env) do
-    {:list, Enum.map(ast, &eval(&1, env))}
+  defp eval_ast({:list, ast, meta}, env) do
+    {:list, Enum.map(ast, &eval(&1, env)), meta}
   end
-  defp eval_ast({:vector, ast}, env), do: {:vector, Enum.map(ast, &eval(&1, env))}
-  defp eval_ast({:map, ast}, env) do
+  defp eval_ast({:vector, ast, meta}, env), do: {:vector, Enum.map(ast, &eval(&1, env)), meta}
+  defp eval_ast({:map, ast, meta}, env) do
     map = for {key, value} <- ast, into: %{} do
       {key, eval(value, env)}
     end
-    {:map, map}
+    {:map, map, meta}
   end
   defp eval_ast(ast, _env), do: ast
 
-  defp macro_call?({:list, [{:symbol, key} | _tail]}, env) do
+  defp macro_call?({:list, [{:symbol, key} | _tail], _}, env) do
     case Mal.Env.get(env, key) do
       {:ok, %Function{macro: true}} -> true
       _ -> false
@@ -96,7 +96,7 @@ defmodule Mix.Tasks.StepAMal do
   end
   defp macro_call?(_ast, _env), do: false
 
-  defp do_macro_call({:list, [{:symbol, key} | tail]}, env) do
+  defp do_macro_call({:list, [{:symbol, key} | tail], _}, env) do
     {:ok, %Function{value: macro, macro: true}} = Mal.Env.get(env, key)
     res = macro.(tail)
     res
@@ -120,11 +120,11 @@ defmodule Mix.Tasks.StepAMal do
     _eval(ast, env)
   end
 
-  defp _eval({:list, []} = empty_list, _env), do: empty_list
+  defp _eval({:list, [], _meta} = empty_list, _env), do: empty_list
 
-  defp _eval({:list, _ast} = ast, env) do
+  defp _eval({:list, _ast, _meta} = ast, env) do
     case macroexpand(ast, env) do
-      {:list, list} -> eval_list(list, env)
+      {:list, list, meta} -> eval_list(list, env, meta)
       ast -> eval_ast(ast, env)
     end
   end
@@ -134,16 +134,16 @@ defmodule Mix.Tasks.StepAMal do
   end
 
   # Builtin Special Funcs
-  defp eval_list([{:symbol, "macroexpand"}, ast], env), do: macroexpand(ast, env)
+  defp eval_list([{:symbol, "macroexpand"}, ast], env, _meta), do: macroexpand(ast, env)
 
   # Define a symbol in the current environment
-  defp eval_list([{:symbol, "def!"}, {:symbol, key}, value], env) do
+  defp eval_list([{:symbol, "def!"}, {:symbol, key}, value], env, _meta) do
     evaled = eval(value, env)
     Mal.Env.set(env, key, evaled)
     evaled
   end
 
-  defp eval_list([{:symbol, "defmacro!"}, {:symbol, name}, ast], env) do
+  defp eval_list([{:symbol, "defmacro!"}, {:symbol, name}, ast], env, _meta) do
     evaled = %{eval(ast, env) | macro: true}
     Mal.Env.set(env, name, evaled)
     evaled
@@ -151,7 +151,7 @@ defmodule Mix.Tasks.StepAMal do
 
   # Define a new environment with the current environment as parent
   # And evaluate the body in the new environment
-  defp eval_list([{:symbol, "let*"}, {_, bindings}, body], env) do
+  defp eval_list([{:symbol, "let*"}, {_, bindings}, body], env, _meta) do
     #_zipped = Enum.unzip(bindings)
     new_env = Mal.Env.new(env)
 
@@ -160,7 +160,7 @@ defmodule Mix.Tasks.StepAMal do
   end
 
   # Evaluate the list of expressions in order, and return the last one
-  defp eval_list([{:symbol, "do"}| ast], env) do
+  defp eval_list([{:symbol, "do"}| ast], env, _meta) do
     ast
     |> List.delete_at(-1)
     |> list
@@ -170,7 +170,7 @@ defmodule Mix.Tasks.StepAMal do
   end
 
   # Evaluate the condition, if true, evaluate the true_case, else evaluate the false_case
-  defp eval_list([{:symbol, "if"}, condition, true_case | false_case], env) do
+  defp eval_list([{:symbol, "if"}, condition, true_case | false_case], env, _meta) do
     case eval(condition, env) do
       n when n == nil or n == false -> case false_case do
         [] -> nil
@@ -181,7 +181,7 @@ defmodule Mix.Tasks.StepAMal do
   end
 
   # Define a function in the current environment
-  defp eval_list([{:symbol, "fn*"}, {type, params}, body], env) when type in [:list, :vector] do
+  defp eval_list([{:symbol, "fn*"}, {type, params}, body], env, _meta) when type in [:list, :vector] do
     closure = fn (args) ->
       new_env = Mal.Env.new(env, params, args)
       eval(body, new_env)
@@ -191,18 +191,18 @@ defmodule Mix.Tasks.StepAMal do
   end
 
   # Quoting and Quasi-quoting
-  defp eval_list([{:symbol, "quote"}, ast], _), do: ast
+  defp eval_list([{:symbol, "quote"}, ast], _env, _meta), do: ast
 
-  defp eval_list([{:symbol, "quasiquote"}, ast], env) do
+  defp eval_list([{:symbol, "quasiquote"}, ast], env, _meta) do
     ast
     |> quasiquote
     |> eval(env)
   end
-  defp eval_list([{:symbol, "quasiquoteexpand"}, ast], _) do
+  defp eval_list([{:symbol, "quasiquoteexpand"}, ast], _, _meta) do
     quasiquote(ast)
   end
 
-  defp eval_list([{:symbol, "try*"}, body, {:list, [{:symbol, "catch*"}, {:symbol, key}, catch_body]}], env) do
+  defp eval_list([{:symbol, "try*"}, body, {:list, [{:symbol, "catch*"}, {:symbol, key}, catch_body], _meta}], env, _) do
     try do
       eval(body, env)
     catch
@@ -213,7 +213,7 @@ defmodule Mix.Tasks.StepAMal do
     end
   end
 
-  defp eval_list([{:symbol, "try*"}, body], env) do
+  defp eval_list([{:symbol, "try*"}, body], env, _) do
     try do
       eval(body, env)
     catch
@@ -221,23 +221,23 @@ defmodule Mix.Tasks.StepAMal do
     end
   end
   # default eval_list
-  defp eval_list(ast, env) do
-    {:list, [func | args]} = eval_ast({:list, ast}, env)
+  defp eval_list(ast, env, meta) do
+    {:list, [func | args], _} = eval_ast({:list, ast, meta}, env)
     func.value.(args)
   end
 
-  defp quasiquote({:list, [{:symbol, "unquote"}, ast]}), do: ast
-  defp quasiquote({:list, ast}), do: qq_foldr(ast)
-  defp quasiquote({:vector, ast}), do: list([{:symbol, "vec"}, qq_foldr(ast)])
+  defp quasiquote({:list, [{:symbol, "unquote"}, ast, _]}), do: ast
+  defp quasiquote({:list, ast, _}), do: qq_foldr(ast)
+  defp quasiquote({:vector, ast, _}), do: list([{:symbol, "vec"}, qq_foldr(ast)])
   defp quasiquote({:symbol, ast}), do: list([{:symbol, "quote"}, {:symbol, ast}])
-  defp quasiquote({:map, ast}), do: list([{:symbol, "quote"}, {:map, ast}])
+  defp quasiquote({:map, ast, meta}), do: list([{:symbol, "quote"}, {:map, ast, meta}])
   defp quasiquote(ast), do: ast
 
 
   defp qq_foldr([]), do: list([])
   defp qq_foldr([head | tail]), do: qq_loop(head, qq_foldr(tail))
 
-  defp qq_loop({:list, [{:symbol, "splice-unquote"}, ast]}, acc), do: list([{:symbol, "concat"}, ast, acc])
+  defp qq_loop({:list, [{:symbol, "splice-unquote"}, ast], _}, acc), do: list([{:symbol, "concat"}, ast, acc])
   defp qq_loop(ast, acc), do: list([{:symbol, "cons"}, quasiquote(ast), acc])
 
 #  defp qq_loop([])

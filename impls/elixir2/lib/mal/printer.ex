@@ -5,9 +5,9 @@ defmodule Mal.Printer do
   def print_str(mal, true) when is_bitstring(mal), do: inspect(mal)
   def print_str(mal, true) when is_function(mal), do: "#Function"
   def print_str(%Mal.Function{value: _value}, _), do: "#Function"
-  def print_str({:list, mal}, print_readably), do: "(#{print_list(mal, print_readably)})"
-  def print_str({:vector, mal}, print_readably), do: "[#{print_list(mal, print_readably)}]"
-  def print_str({:map, mal}, print_readably), do: "{#{print_map(mal, print_readably)}}"
+  def print_str({:list, mal, _}, print_readably), do: "(#{print_list(mal, print_readably)})"
+  def print_str({:vector, mal, _}, print_readably), do: "[#{print_list(mal, print_readably)}]"
+  def print_str({:map, mal, _}, print_readably), do: "{#{print_map(mal, print_readably)}}"
   def print_str({:symbol, mal}, _), do: mal
   def print_str({:error, msg}, _), do: "Error: #{print_str(msg)}"
   def print_str(mal, _) when is_atom(mal), do: inspect(mal)
