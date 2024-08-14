@@ -70,6 +70,7 @@ defmodule Mal.Core do
       "conj" => &conj/1,
       "meta" => &meta/1,
       "with-meta" => &with_meta/1,
+      "macro?" => &macro?/1,
       "." => &alias_ns/1
     }
 
@@ -108,7 +109,7 @@ defmodule Mal.Core do
     File.read!(file)
   end
 
-  defp nth([{_, list}, n])  do
+  defp nth([{_, list, _}, n])  do
     case Enum.fetch(list, n) do
       {:ok, value} -> value
       :error -> throw({:error, "Index out of bounds"})
@@ -117,28 +118,28 @@ defmodule Mal.Core do
   defp mal_throw([ast]) do
     throw({:error, ast})
   end
-  defp first([{type, [h|_t]}]) when type in [:vector, :list] do
+  defp first([{type, [h|_t], _}]) when type in [:vector, :list] do
     h
   end
   defp first([_]), do: nil
-  defp rest([{type, [_h|t]}]) when type in [:vector, :list] do
+  defp rest([{type, [_h|t], _}]) when type in [:vector, :list] do
     {:list, t}
   end
   defp rest([_]), do: {:list, []}
 
-  defp count([{type, list}]) when type in [:list, :vector] do
+  defp count([{type, list, _}]) when type in [:list, :vector] do
     Enum.count(list)
   end
   defp count([nil]), do: 0
-  defp empty([{type, list}]) when type in [:list, :vector] do
+  defp empty([{type, list, _}]) when type in [:list, :vector] do
     Enum.empty?(list)
   end
-  defp vec([{type, list}]) when type in [:list, :vector] do
-    {:vector, list}
+  defp vec([{type, list, meta}]) when type in [:list, :vector] do
+    {:vector, list, meta}
   end
   # cons: this function takes a list as its second parameter and returns a new list that has the first argument prepended to it.
-  defp cons([a, {type, b}]) when type in [:list, :vector] do
-    {:list, [a | b]}
+  defp cons([a, {type, b, meta}]) when type in [:list, :vector] do
+    {:list, [a | b], meta}
   end
 
   #concat: this functions takes 0 or more lists as parameters and returns a new list that is a concatenation of all the list parameters.
@@ -150,7 +151,7 @@ defmodule Mal.Core do
   defp apply([function | tail]), do: do_apply(function, tail)
   #apply: takes at least two arguments. The first argument is a function and the last argument is a list (or vector). The function may be either a built-in core function, an user function constructed with the fn* special form, or a macro, not distinguished from the underlying user function). The arguments between the function and the last argument (if there are any) are concatenated with the final argument to create the arguments that are used to call the function. The apply function allows a function to be called with arguments that are contained in a list (or vector). In other words, (apply F A B [C D]) is equivalent to (F A B C D).
   defp do_apply(function, tail) do
-    [{_type , ast} | rev_args] = Enum.reverse(tail)
+    [{_type , ast, _meta} | rev_args] = Enum.reverse(tail)
     args = Enum.reverse(rev_args)
     func_args = args ++ ast
     function.(func_args)
@@ -222,12 +223,33 @@ defmodule Mal.Core do
 
   # TODO
   # time-ms, meta, with-meta, fn? string?, number?, seq, and conj
-  defp time_ms([_]), do: System.os_time(:millisecond)
-  defp fn?([_]), do: :not_implemented
-  defp string?([_]), do: :not_implemented
-  defp number?([_]), do: :not_implemented
-  defp seq([_]), do: :not_implemented
-  defp conj([_]), do: :not_implemented
+  defp time_ms([]), do: System.os_time(:millisecond)
+  defp string?([s]), do: is_bitstring(s)
+  defp number?([n]), do: is_number(n)
+
+  defp conj([{:list, ast, meta} | args]) do
+    new_list = Enum.reverse(args) ++ ast
+    {:list, new_list, meta}
+  end
+
+  defp conj([{:vector, ast, meta} | args]) do
+    {:vector, ast ++ args, meta}
+  end
+
+  defp seq([nil]), do: nil
+  defp seq([{:list, [], _meta}]), do: nil
+  defp seq([{:list, ast, meta}]), do: {:list, ast, meta}
+  defp seq([{:vector, [], _meta}]), do: nil
+  defp seq([{:vector, ast, meta}]), do: {:list, ast, meta}
+  defp seq([""]), do: nil
+  defp seq([s]), do: {:list, String.split(s, "", trim: true), nil}
+  defp seq(_), do: nil
+
+  defp fn?([%Mal.Function{macro: false}]), do: true
+  defp fn?(_), do: false
+  defp macro?([%Mal.Function{macro: true}]), do: true
+  defp macro?(_), do: false
+
 
 
 

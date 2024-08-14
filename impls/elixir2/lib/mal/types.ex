@@ -14,7 +14,7 @@ defmodule Mal.Types do
   def list(ast) do
     {:list, ast, nil}
   end
-  def list?([{:list, _}]), do: true
+  def list?([{:list, _, _}]), do: true
   def list?(_), do: false
 
   def vector(args), do: {:vector, args, nil}
